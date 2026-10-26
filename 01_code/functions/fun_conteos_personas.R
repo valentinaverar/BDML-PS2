@@ -7,6 +7,7 @@
 # una sola variable. Requiere que el paquete tidyverse esté cargado.
 ##########################################################
 
+#integracion de la base de datos
 fun_conteos_personas <- function(.db) {
   #' Contar personas de la unidad de gasto por categoría
   #'

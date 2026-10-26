@@ -1,0 +1,457 @@
+% Guía de modelos y resultados, corte del 26 de octubre de 2026.
+% Fuentes: 02_outputs/tables/registro_modelos.csv y 00_data/kaggle_scores.csv.
+% El logosímbolo es el oficial (versión a color, sobre blanco).
+% Compilar desde esta carpeta: pdflatex guia_modelos.tex
+\documentclass[aspectratio=169,10pt]{beamer}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-nodecimaldot,shorthands=off]{babel}
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+\usepackage{booktabs}
+\usepackage{colortbl}
+\usepackage{array}
+\usepackage{graphicx}
+\graphicspath{{logo/}}
+
+% Amarillo medido en el logosímbolo oficial (versión a color).
+\definecolor{uniandesYellow}{RGB}{255,242,0}
+\definecolor{uniandesInk}{RGB}{20,20,20}
+\definecolor{rowAlt}{RGB}{247,247,247}
+
+\usefonttheme{professionalfonts}
+\setbeamercolor{normal text}{fg=uniandesInk,bg=white}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{structure}{fg=uniandesInk}
+\setbeamercolor{frametitle}{fg=uniandesInk,bg=white}
+\setbeamercolor{title}{fg=uniandesInk}
+\setbeamercolor{headline}{fg=uniandesInk,bg=white}
+\setbeamercolor{uniandesBar}{fg=uniandesInk,bg=uniandesYellow}
+\setbeamercolor{block title}{fg=white,bg=uniandesInk}
+\setbeamercolor{block body}{fg=uniandesInk,bg=uniandesYellow!28}
+\setbeamercolor{itemize item}{fg=uniandesInk}
+\setbeamercolor{itemize subitem}{fg=uniandesInk}
+\setbeamertemplate{navigation symbols}{}
+\setbeamersize{text margin left=7mm,text margin right=7mm}
+
+\setbeamertemplate{itemize item}{\raisebox{0.2ex}{\color{uniandesYellow}\rule{1.15ex}{1.15ex}}}
+\setbeamertemplate{itemize subitem}{\raisebox{0.35ex}{\color{uniandesInk}\rule{1.05ex}{0.7pt}}}
+
+\setbeamertemplate{headline}{%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=11mm,dp=1.2mm,leftskip=5mm,rightskip=5mm]{headline}%
+    \includegraphics[height=7.2mm]{uniandes_h_color.png}%
+    \hfill
+    \raisebox{2.2mm}{\footnotesize MECA 4107 · Problem Set 2}%
+  \end{beamercolorbox}%
+  {\color{uniandesYellow}\hrule height 2.4pt}%
+}
+
+\setbeamertemplate{frametitle}{%
+  \vspace{0.32em}%
+  \hspace{0.15em}{\large\bfseries\insertframetitle}\par
+  \vspace{0.16em}%
+  {\color{uniandesYellow}\hrule height 1.15pt}%
+  \vspace{0.28em}%
+}
+
+\setbeamertemplate{footline}{%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=3.1ex,dp=1.15ex,leftskip=5mm,rightskip=5mm]{uniandesBar}%
+    \footnotesize
+    Equipo 03: Herrera, Silva y Vera%
+    \hfill
+    Guía de modelos · 26 de octubre de 2026%
+    \hfill
+    \insertframenumber\,/\,\inserttotalframenumber
+  \end{beamercolorbox}%
+}
+
+\newcommand{\mejor}{\rowcolor{uniandesYellow}}
+\newcommand{\fila}{\rowcolor{rowAlt}}
+\newcommand{\hh}[1]{\cellcolor{uniandesInk}\textcolor{white}{\textbf{#1}}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\setlength{\tabcolsep}{3.6pt}
+\renewcommand{\arraystretch}{1.12}
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+\begin{frame}[plain]
+  \begin{beamercolorbox}[wd=\paperwidth,ht=3.2mm]{uniandesBar}\end{beamercolorbox}
+  \vspace{0.2em}
+  \begin{center}
+    \includegraphics[width=0.50\textwidth]{uniandes_color.png}\\[0.55em]
+    {\LARGE\bfseries Guía de modelos y resultados}\\[0.15em]
+    {\large Predicción de pobreza en Colombia}\\[0.5em]
+    Problem Set 2 · MECA 4107\\
+    Big Data y Machine Learning para Economía Aplicada\\[0.45em]
+    \textbf{Equipo 03}\\
+    Julián Herrera \quad Andrés Silva \quad Valentina Vera\\[0.45em]
+    {\small Corte del 26 de octubre de 2026, antes de nuevos cambios.}\\
+    {\small Métrica de la competencia: F1 del hogar pobre.}
+  \end{center}
+  \vfill
+  \begin{beamercolorbox}[wd=\paperwidth,ht=6.4mm,dp=0.8mm,center]{uniandesBar}
+    \small Universidad de los Andes · 2026-20
+  \end{beamercolorbox}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Cómo leer esta guía}
+  \small
+  \setlength{\itemsep}{0.22em}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \textbf{Dos puntajes, no uno.}
+      \begin{itemize}
+        \item \textbf{F1 en CV.} Validación cruzada de 5 folds. El umbral maximiza ese F1 fuera de muestra.
+        \item \textbf{Puntaje público.} El de Kaggle. Solo existe si el envío está en \texttt{kaggle\_scores.csv}.
+      \end{itemize}
+      Un CSV en \texttt{predictions/} sin fila en el registro no es un resultado.
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Qué se puede comparar.}
+      \begin{itemize}
+        \item Algoritmos entre sí: solo el mismo conjunto, \textbf{X5} (43 predictores).
+        \item Conjuntos entre sí: la escalera del logit o la de CART, un algoritmo a la vez.
+        \item X6 y X7 mezclan más variables con el algoritmo.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vspace{0.35em}
+  \begin{block}{Línea de base para los cambios que vienen}
+    Hoy el mejor es LightGBM con X7: F1 en CV de 0.768 y puntaje público de 0.77. Un modelo nuevo se compara contra ese par y contra el mejor del mismo conjunto.
+  \end{block}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Conjuntos de predictores}
+  Los conjuntos están anidados: cada uno contiene al anterior y agrega un bloque. X7 no amplía X6: vive en otras bases y tiene faltantes.
+  \vspace{0.3em}
+  \footnotesize
+  \begin{center}
+  \begin{tabular}{@{}llL{7.6cm}@{}}
+    \toprule
+    \hh{Conjunto} & \hh{Pred.} & \hh{Qué agrega} \\
+    \midrule
+    X1 vivienda & 5 & Ubicación, tenencia, hacinamiento, personas y menores. \\
+    \fila X2 demografía & 11 & Jefe, adultos mayores, edad de trabajar, dependencia y educación. \\
+    X3 empleo & 15 & Ocupados e inactivos, en número y en proporción. \\
+    \fila X4 completo & 21 & Cotización, pensión, horas, asalariados, cuenta propia y oficio del jefe. \\
+    \mejor X5 extendido & 43 & Arriendo, edades, desempleo, salud, subempleo y transferencias. Es el conjunto común. \\
+    \fila X6 detallado & 148 & X5 más los conteos de personas por categoría. \\
+    X7 ampliado & 1\,296 & Hogar y miembros en detalle. Solo LightGBM y XGBoost: tiene faltantes. \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Baseline: clasificar a todos como no pobres}
+  \begin{columns}[c,onlytextwidth]
+    \begin{column}{0.46\textwidth}
+      \begin{center}
+      \begin{tabular}{@{}lc@{}}
+        \toprule
+        \hh{Métrica} & \hh{Resultado} \\
+        \midrule
+        Accuracy & 79.98\% \\
+        \mejor F1 & 0.00 \\
+        Sensibilidad & 0.00 \\
+        Especificidad & 100\% \\
+        \bottomrule
+      \end{tabular}
+      \end{center}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      Cerca de 80\% de los hogares de entrenamiento no son pobres. Un clasificador que nunca dice ``pobre'' acierta la mayoría y falla la métrica de la competencia.
+      \vspace{0.6em}
+      \begin{block}{Para el slide}
+        El accuracy no se presenta como desempeño. El punto de partida de todos los modelos es un F1 de cero.
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Logit: la escalera de información}
+  Misma regresión logística. Cambia solo el conjunto. El umbral maximiza el F1 en CV. Estos cinco envíos sí tienen puntaje público.
+  \vspace{0.4em}
+  \footnotesize
+  \begin{center}
+  \begin{tabular}{@{}lccccc@{}}
+    \toprule
+    \hh{Conjunto} & \hh{Pred.} & \hh{Umbral} & \hh{F1 CV} & \hh{AUC} & \hh{Público} \\
+    \midrule
+    X1 vivienda    & 5  & 0.25 & 0.521 & 0.793 & 0.53 \\
+    \fila X2 demografía & 11 & 0.26 & 0.557 & 0.829 & 0.56 \\
+    X3 empleo      & 15 & 0.29 & 0.605 & 0.864 & 0.61 \\
+    \fila X4 completo   & 21 & 0.33 & 0.680 & 0.918 & 0.68 \\
+    \mejor X5 extendido & 43 & 0.33 & 0.711 & 0.932 & 0.71 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.45em}
+  \begin{itemize}
+    \item El salto grande está entre empleo y el conjunto completo (0.61 a 0.68): formalidad, horas y oficio del jefe.
+    \item De X4 a X5 se ganan tres puntos públicos (0.68 a 0.71) con arriendo, desempleo y transferencias.
+    \item El F1 en CV y el puntaje público se mueven juntos. La validación está ordenando bien estos envíos.
+  \end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{CART: la misma escalera, y el rebalanceo}
+  Árbol de clasificación con el \texttt{cp} elegido en una grilla. La escalera no se envió a Kaggle, salvo las dos variantes de X5.
+  \vspace{0.35em}
+  \footnotesize
+  \begin{center}
+  \begin{tabular}{@{}llcccc@{}}
+    \toprule
+    \hh{Variante} & \hh{Rebalanceo} & \hh{Umbral} & \hh{F1 CV} & \hh{Recall} & \hh{Público} \\
+    \midrule
+    X1 vivienda & sin & 0.24 & 0.514 & 0.571 & --- \\
+    \fila X2 demografía & sin & 0.22 & 0.544 & 0.635 & --- \\
+    X3 empleo & sin & 0.24 & 0.590 & 0.651 & --- \\
+    \fila X4 completo & sin & 0.26 & 0.658 & 0.716 & --- \\
+    X5 extendido & sin & 0.28 & 0.686 & 0.714 & 0.67 \\
+    \fila X5 extendido & up & 0.75 & 0.685 & 0.794 & 0.68 \\
+    X5 extendido & down & 0.74 & 0.677 & 0.792 & --- \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.4em}
+  El orden de la escalera es el mismo del logit, unos tres puntos de F1 por debajo. Igualar las clases mueve el umbral de 0.28 a 0.75 y sube el recall, pero el F1 en CV no mejora. En Kaggle, el upsampling queda en 0.68, un punto sobre el árbol sin rebalanceo.
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Comparación justa: todos sobre X5}
+  43 predictores, sin rebalanceo, ordenados por F1 en CV. El guion indica que no hay puntaje público.
+  \vspace{0.12em}
+  \footnotesize
+  \renewcommand{\arraystretch}{1.0}
+  \begin{center}
+  \begin{tabular}{@{}lcccccc@{}}
+    \toprule
+    \hh{Algoritmo} & \hh{Umbral} & \hh{F1 CV} & \hh{Precisión} & \hh{Recall} & \hh{AUC} & \hh{Público} \\
+    \midrule
+    \mejor LightGBM & 0.31 & 0.731 & 0.659 & 0.820 & 0.942 & --- \\
+    XGBoost & 0.37 & 0.729 & 0.686 & 0.778 & 0.941 & --- \\
+    \fila Random forest, mtry 31 & 0.34 & 0.715 & 0.651 & 0.792 & 0.933 & --- \\
+    AdaBoost & 0.46 & 0.712 & 0.664 & 0.768 & 0.933 & --- \\
+    \fila Elastic net & 0.35 & 0.711 & 0.670 & 0.758 & 0.932 & --- \\
+    Logit & 0.33 & 0.711 & 0.660 & 0.771 & 0.932 & 0.71 \\
+    \fila Random forest, mtry 6 & 0.36 & 0.704 & 0.656 & 0.759 & 0.928 & --- \\
+    LPM & 0.36 & 0.688 & 0.633 & 0.753 & 0.922 & --- \\
+    \fila CART & 0.28 & 0.686 & 0.660 & 0.714 & 0.899 & 0.67 \\
+    Naive Bayes & 0.88 & 0.644 & 0.585 & 0.717 & 0.892 & --- \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.12em}
+  {\scriptsize LightGBM: 31 hojas, 748 rondas. XGBoost: profundidad 5, 314 rondas. AdaBoost: 100 iter., profundidad 5. Elastic net: $\alpha=0.25$.}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Rebalanceo sobre X5: el umbral cambia, el F1 casi no}
+  Se replican hogares pobres en el entrenamiento (hasta cuatro veces, o hasta igualar clases en CART). El test y la validación conservan la proporción real.
+  \vspace{0.4em}
+  \footnotesize
+  \begin{center}
+  \begin{tabular}{@{}llcccc@{}}
+    \toprule
+    \hh{Algoritmo} & \hh{Tratamiento} & \hh{Umbral} & \hh{F1 CV} & \hh{Recall} & \hh{Contra el original} \\
+    \midrule
+    CART & up & 0.75 & 0.685 & 0.794 & $-0.001$ \\
+    \fila CART & down & 0.74 & 0.677 & 0.792 & $-0.009$ \\
+    AdaBoost & pobres $\times 4$ & 0.55 & 0.714 & 0.790 & $+0.002$ \\
+    \fila Random forest, mtry 31 & pobres $\times 4$ & 0.52 & 0.710 & 0.765 & $-0.004$ \\
+    Naive Bayes & pobres $\times 4$ & 0.96 & 0.644 & 0.724 & $0.000$ \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.55em}
+  \begin{block}{Para el slide}
+    El desbalance se corrige mejor moviendo el umbral que replicando hogares. El único público que mejora con rebalanceo es CART: de 0.67 a 0.68.
+  \end{block}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Modelos lineales, en una ficha}
+  \footnotesize
+  \begin{center}
+  \begin{tabular}{@{}L{2.5cm}L{5.7cm}ccc@{}}
+    \toprule
+    \hh{Modelo} & \hh{Especificación registrada} & \hh{F1 CV} & \hh{AUC} & \hh{Público} \\
+    \midrule
+    LPM 10 & Diez predictores de vivienda, demografía y empleo. Umbral 0.33. & 0.625 & 0.883 & --- \\
+    \fila LPM X5 & Los 43 predictores. Umbral 0.36. & 0.688 & 0.922 & --- \\
+    Logit X5 & Sin penalización. Umbral 0.33. & 0.711 & 0.932 & 0.71 \\
+    Elastic net & Logit penalizado, $\alpha=0.25$, $\lambda=10^{-4}$. Umbral 0.35. & 0.711 & 0.932 & --- \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.55em}
+  \begin{itemize}
+    \item Con las mismas 43 variables, la penalización no mejora el F1 del logit: los dos quedan en 0.711.
+    \item El LPM corto (10 variables) queda en 0.625, entre el logit de empleo y el logit completo.
+    \item Hay más CSV de elastic net (Bogotá, otros $\alpha$, X6) y dos LPM (\texttt{LPM\_41}, \texttt{LPM\_X6}) sin fila en el registro. No entran en esta guía como resultado.
+  \end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Boosting: el salto está en las variables}
+  Misma receta dentro de cada algoritmo. Cambia el conjunto.
+  \vspace{0.35em}
+  \footnotesize
+  \begin{center}
+  \begin{tabular}{@{}llcccc@{}}
+    \toprule
+    \hh{Modelo} & \hh{Conjunto} & \hh{Umbral} & \hh{F1 CV} & \hh{AUC} & \hh{Público} \\
+    \midrule
+    XGBoost & X5, 43 & 0.37 & 0.729 & 0.941 & --- \\
+    \fila XGBoost & X6, 148 & 0.37 & 0.757 & 0.952 & 0.76 \\
+    XGBoost & X7, 1\,296 & 0.39 & 0.762 & 0.954 & 0.76 \\
+    \fila LightGBM & X5, 43 & 0.31 & 0.731 & 0.942 & --- \\
+    \mejor LightGBM & X7, 1\,296 & 0.39 & 0.768 & 0.957 & 0.77 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{0.2em}
+  \begin{itemize}
+    \setlength{\itemsep}{0.2em}
+    \item XGBoost: de X5 a X6 gana 0.028 de F1 en CV. De X6 a X7 solo gana 0.005, y en Kaggle los dos quedan en 0.76.
+    \item LightGBM en X5 ya empata al mejor XGBoost de X5 (0.731 contra 0.729). Con X7 llega a 0.768 y al público de 0.77.
+    \item XGBoost: profundidad 5, $\eta=0.10$, peso mínimo de hijo 5. LightGBM: 31 hojas, tasa 0.04, $\lambda_2=10$, $\lambda_1=0.1$, 748 rondas.
+  \end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Puntajes públicos, de mayor a menor}
+  Solo envíos anotados. El LightGBM de X7 reemplazó un envío anterior con el mismo público de 0.77; se cita el archivo vigente.
+  \vspace{0.3em}
+  \footnotesize
+  \begin{center}
+  \begin{tabular}{@{}clL{8.4cm}@{}}
+    \toprule
+    \hh{Público} & \hh{Fecha} & \hh{Envío} \\
+    \midrule
+    \mejor 0.77 & 25 oct. & LightGBM, X7, 31 hojas, 748 rondas, umbral 0.39. \\
+    0.76 & 22 oct. & XGBoost, X6, profundidad 5, 516 rondas, umbral 0.37. \\
+    \fila 0.76 & 25 oct. & XGBoost, X7, profundidad 5, 388 rondas, umbral 0.39. \\
+    0.71 & 20 oct. & Logit, X5, umbral 0.33. \\
+    \fila 0.68 & 20 oct. & CART, X5, upsampling, umbral 0.75. \\
+    0.68 & 17 oct. & Logit, X4 completo, umbral 0.33. \\
+    \fila 0.67 & 20 oct. & CART, X5, sin rebalanceo, umbral 0.28. \\
+    0.61 & 17 oct. & Logit, X3 empleo, umbral 0.29. \\
+    \fila 0.56 & 17 oct. & Logit, X2 demografía, umbral 0.26. \\
+    0.53 & 17 oct. & Logit, X1 vivienda, umbral 0.25. \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{El mejor modelo, en una diapositiva}
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.52\textwidth}
+      \textbf{LightGBM · X7 ampliado}
+      \vspace{0.35em}
+      \footnotesize
+      \begin{tabular}{@{}lc@{}}
+        \toprule
+        \hh{Dato} & \hh{Valor} \\
+        \midrule
+        \mejor F1 en CV & 0.768 \\
+        Precisión & 0.744 \\
+        Recall & 0.794 \\
+        AUC & 0.957 \\
+        Umbral & 0.39 \\
+        \mejor Puntaje público & 0.77 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Qué decir, y qué no.}
+      \begin{itemize}
+        \item Es el mejor F1 en CV y el mejor público.
+        \item Parte de esa ventaja es el conjunto: 1\,296 variables, no solo el algoritmo.
+        \item En X5, LightGBM (0.731) y XGBoost (0.729) están empatados, ocho puntos por encima del logit (0.711).
+        \item El segundo público es 0.76, compartido por XGBoost en X6 y en X7.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Qué distingue a un hogar pobre}
+  Importancia en X5, escalada de 0 a 100 dentro de cada modelo. Las dos listas coinciden en el núcleo: arriendo, empleo y formalidad.
+  \vspace{0.4em}
+  \footnotesize
+  \begin{columns}[T,onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{Random forest}\\[0.3em]
+      \begin{tabular}{@{}lc@{}}
+        \toprule
+        \hh{Variable} & \hh{0--100} \\
+        \midrule
+        \mejor Proporción de ocupados & 100 \\
+        Arriendo por persona (log) & 98 \\
+        \fila Horas trabajadas & 76 \\
+        Hogar pensionado & 47 \\
+        Cotizantes entre ocupados & 37 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \centering
+      \textbf{AdaBoost}\\[0.3em]
+      \begin{tabular}{@{}lc@{}}
+        \toprule
+        \hh{Variable} & \hh{0--100} \\
+        \midrule
+        \mejor Arriendo por persona (log) & 100 \\
+        Proporción de ocupados & 69 \\
+        \fila Cotizantes entre ocupados & 65 \\
+        Hogar pensionado & 52 \\
+        Número de cotizantes & 45 \\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+  \end{columns}
+  \vspace{0.55em}
+  \scriptsize Estas importancias son de los modelos en X5, no del LightGBM de X7. Sirven para el slide de mecanismos. No se usan como ranking del modelo ganador.
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Archivos que no entran como resultado}
+  Están en \texttt{02\_outputs/predictions/} y no tienen fila en \texttt{registro\_modelos.csv}, o no tienen puntaje público. No se citan en los slides hasta registrar el F1.
+  \vspace{0.4em}
+  \footnotesize
+  \begin{itemize}
+    \item \textbf{Elastic net,} varias pruebas: con y sin Bogotá, $\alpha$ de 0.25, 0.5 y 1, X6 y un envío con pesos. En el registro solo está $\alpha=0.25$, $\lambda=10^{-4}$, F1 0.711, sin público.
+    \item \textbf{LPM:} \texttt{LPM\_41.csv} y \texttt{LPM\_X6\_detallado.csv}. Registrados solo \texttt{LPM\_10} (0.625) y \texttt{LPM\_X\_5} (0.688), sin público.
+    \item \textbf{XGBoost:} la búsqueda de 250 configuraciones y la variante de 352 rondas. La configuración de X5 que sí está medida es la de 314 rondas, F1 0.729, sin público.
+    \item \textbf{Sin público, aunque el F1 en CV sí está:} LightGBM en X5, XGBoost en X5, los dos random forest, AdaBoost, Naive Bayes, elastic net, los dos LPM y CART con downsampling.
+  \end{itemize}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Guion para los slides, antes de cambiar modelos}
+  \small
+  \setlength{\itemsep}{0.28em}
+  \begin{enumerate}
+    \item El baseline acierta el 80\% y tiene F1 de 0. La métrica es el F1.
+    \item Logit en Kaggle: vivienda 0.53, demografía 0.56, empleo 0.61, completo 0.68, extendido 0.71. CART repite el orden y solo X5 está publicado.
+    \item En X5, de mejor a peor: boosting, bosques y AdaBoost, logit y elastic net, LPM, CART, Naive Bayes.
+    \item Replicar hogares pobres casi no mueve el F1. El umbral sí.
+    \item En Kaggle, XGBoost llega a 0.76 con X6 y con X7. LightGBM con X7 llega a 0.77.
+    \item Separar ``mejor algoritmo en X5'' de ``mejor envío de la competencia''.
+  \end{enumerate}
+  \vspace{0.15em}
+  \begin{block}{Antes de un modelo nuevo}
+    Registrar F1, precisión, recall, AUC y umbral, y el público en \texttt{kaggle\_scores.csv}. Si el conjunto no es X5, no entra en la tabla de algoritmos.
+  \end{block}
+\end{frame}
+
+\end{document}
