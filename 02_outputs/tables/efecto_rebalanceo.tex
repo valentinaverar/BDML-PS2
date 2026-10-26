@@ -1,0 +1,16 @@
+
+\begin{tabular}{llll}
+\toprule
+Algoritmo & Rebalanceo & F1 CV & Umbral\\
+\midrule
+AdaBoost & Sin rebalanceo & 0,712 & 0,46\\
+AdaBoost & Pobres x4 & 0,714 & 0,55\\
+CART & Sin rebalanceo & 0,686 & 0,28\\
+CART & Upsampling & 0,685 & 0,75\\
+CART & Downsampling & 0,677 & 0,74\\
+Naive Bayes & Sin rebalanceo & 0,644 & 0,88\\
+Naive Bayes & Pobres x4 & 0,644 & 0,96\\
+Random Forest (grilla CV) & Sin rebalanceo & 0,715 & 0,34\\
+Random Forest (grilla CV) & Pobres x4 & 0,710 & 0,52\\
+\bottomrule
+\end{tabular}

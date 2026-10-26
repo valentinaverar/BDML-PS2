@@ -1,0 +1,6 @@
+"Efecto","Puntos_F1"
+"Algoritmo (con X_5, sin Naive Bayes)",4.5343525637759
+"Variables: XGBoost de X_5 a X_7",3.2944617390725
+"Variables: LightGBM de X_5 a X_7",3.7362759047066
+"Algoritmo con X_7: LightGBM frente a XGBoost",0.634676607403706
+"Ajuste: Random Forest fijo frente a grilla",1.097699016107

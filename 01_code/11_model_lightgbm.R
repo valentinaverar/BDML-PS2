@@ -210,3 +210,5 @@ fun_lgbm_variante <- function(.nombre_conjunto) {
 lgbm_X7 <- fun_lgbm_variante("X_7_ampliado")
 # Conjunto común X_5_extendido, con el que se comparan todos los algoritmos.
 lgbm_X5 <- fun_lgbm_variante("X_5_extendido")
+# Modelo con X_6 para comparación 
+lgbm_X6 <- fun_lgbm_variante("X_6_detallado")
