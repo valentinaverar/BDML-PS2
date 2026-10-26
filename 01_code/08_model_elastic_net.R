@@ -439,6 +439,17 @@ stopifnot(
   all(prob_test_final >= 0 & prob_test_final <= 1)
 )
 
+# Se guardan las predicciones fuera de muestra de la combinación elegida,
+# las del test y los coeficientes del modelo final, para la comparación de
+# algoritmos (13_compare_algorithms.R).
+saveRDS(
+  list(oof = oof_mejor, prob_test = prob_test_final, umbral = umbral_final,
+       alpha = alpha_final, lambda = lambda_final,
+       coeficientes = as.matrix(coef(modelo_final, s = lambda_final))),
+  file.path("03_temp", paste0(nombre_enet(lambda = lambda_final,
+                                          alpha = alpha_final), ".rds"))
+)
+
 
 # 8. SUBMISSION: ELASTIC NET SELECCIONADO -------------------
 

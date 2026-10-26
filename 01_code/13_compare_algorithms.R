@@ -94,12 +94,8 @@ comparacion_x5 <- variantes |>
   ungroup() |>
   arrange(desc(f1_cv))
 
-# Figura: cada algoritmo frente al logit, la referencia natural para un
-# economista. Los algoritmos se agrupan por familia y la línea une cada
-# punto con el F1 del logit, de modo que se lee de inmediato cuánto gana o
-# pierde cada uno.
-f1_logit <- comparacion_x5$f1_cv[comparacion_x5$algoritmo_base == "Logit"]
-
+# Figura: F1 de cada algoritmo, agrupados por familia (cómo aprende cada
+# uno) y ordenados de mayor a menor. El boosting va en azul.
 datos_x5 <- comparacion_x5 |>
   mutate(
     familia_grafico = case_when(
@@ -111,35 +107,24 @@ datos_x5 <- comparacion_x5 |>
     familia_grafico = fct_reorder(familia_grafico, f1_cv, .fun = max,
                                   .desc = TRUE),
     algoritmo_base = fct_reorder(algoritmo_base, f1_cv),
-    diferencia = 100 * (f1_cv - f1_logit),
-    etiqueta = if_else(algoritmo_base == "Logit",
-                       paste0(fun_coma(f1_cv), "  (referencia)"),
-                       paste0(fun_coma(f1_cv), "  (",
-                              if_else(diferencia >= 0, "+", "-"),
-                              fun_coma(abs(diferencia), 1), ")")),
     destacado = familia == "Boosting de gradiente"
   )
 
 grafico_x5 <- datos_x5 |>
-  ggplot(aes(y = algoritmo_base)) +
-  geom_vline(xintercept = f1_logit, color = color_resto, linetype = "22",
-             linewidth = 0.5) +
-  geom_segment(aes(x = f1_logit, xend = f1_cv, yend = algoritmo_base,
-                   color = destacado), linewidth = 1.2, alpha = 0.6) +
-  geom_point(aes(x = f1_cv, color = destacado), size = 4) +
-  geom_text(aes(x = pmax(f1_cv, f1_logit), label = etiqueta), color = texto_1,
-            size = 3.2, hjust = -0.12) +
+  ggplot(aes(x = f1_cv, y = algoritmo_base, color = destacado)) +
+  geom_point(size = 4) +
+  geom_text(aes(label = fun_coma(f1_cv)), color = texto_1, size = 3.3,
+            hjust = -0.45) +
   facet_grid(familia_grafico ~ ., scales = "free_y", space = "free_y",
              switch = "y") +
   scale_color_manual(values = c("TRUE" = color_1, "FALSE" = color_resto)) +
-  scale_x_continuous(limits = c(0.635, 0.765),
-                     breaks = seq(0.64, 0.76, by = 0.02),
+  scale_x_continuous(limits = c(0.635, 0.745),
+                     breaks = seq(0.64, 0.74, by = 0.02),
                      labels = function(x) fun_coma(x, 2)) +
-  labs(title = "Con las mismas variables, el boosting le gana al logit por 2 puntos",
+  labs(title = "Con las mismas variables, el boosting obtiene el mayor F1",
        subtitle = "F1 de validación cruzada con las 43 variables de X_5_extendido",
        x = "F1 de validación cruzada", y = NULL,
-       caption = paste("Entre paréntesis, diferencia con el logit en puntos de F1.",
-                       "Mejor variante sin rebalanceo de cada algoritmo; mismos 5 folds para todos.")) +
+       caption = "Mejor variante sin rebalanceo de cada algoritmo; mismos 5 folds para todos.") +
   tema +
   theme(plot.title.position = "plot",
         plot.caption.position = "plot",

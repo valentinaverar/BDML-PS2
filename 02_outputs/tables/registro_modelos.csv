@@ -14,7 +14,6 @@
 "LGBM_X_7_ampliado_hojas_31_iter_748_umbral_0_39","Boosting (LightGBM)","X_7_ampliado",1296,"hojas = 31; learning_rate = 0.04; lambda_l2 = 10; lambda_l1 = 0.1; rondas = 748",0.393939393939394,0.768403942185189,0.744009301534186,0.794452519379845,0.95672855467855,"2026-10-25"
 "LPM_10","LPM","LPM_10",10,"ninguno",0.33,0.625498888469989,0.548032895186459,0.728470203488372,0.882881975491401,"2026-10-26"
 "LPM_X_5_extendido","LPM","X_5_extendido",43,"ninguno",0.36,0.687854239818629,0.63282800020349,0.753361191860465,0.921642172407486,"2026-10-26"
-"EN_lambda_0p0001_alpha_025","Elastic Net","X_5_extendido",43,"alpha = 0.25; lambda = 1e-04",0.35,0.711474245115453,0.670263179031351,0.758085029069767,0.931762449159833,"2026-10-26"
 "RF_trees_300_mtry_6_node_10","Random Forest","X_5_extendido",43,"árboles = 300; mtry = 6; nodo mínimo = 10",0.36,0.70379889052735,0.656268824808151,0.75875121124031,0.927542621486839,"2026-10-26"
 "XGB_depth_5_eta_010_mcw_5_rounds_314","Boosting (XGBoost)","X_5_extendido",43,"depth = 5; eta = 0.1; mcw = 5; rondas = 314",0.37,0.729112558720427,0.686139380826455,0.777828246124031,0.941051164353416,"2026-10-26"
 "XGB_X_6_detallado_depth_5_eta_010_mcw_5_rounds_516","Boosting (XGBoost)","X_6_detallado",148,"depth = 5; eta = 0.1; mcw = 5; rondas = 516",0.37,0.757493889103306,0.717407196815856,0.802325581395349,0.952166649918164,"2026-10-26"
@@ -27,3 +26,4 @@
 "adaboost_X_5_extendido_up4_mfinal_100_depth_5_umbral_0_55","AdaBoost","X_5_extendido",43,"mfinal = 100; maxdepth = 5; coeflearn = Breiman; pobres x4 en train",0.545454545454546,0.714361986118526,0.65190015740949,0.790061773255814,0.93360739327678,"2026-10-23"
 "rf_X_5_extendido_up4_mtry_31_node_20_trees_300_umbral_0_52","Random Forest","X_5_extendido",43,"mtry = 31; min.node.size = 20; num.trees = 300; pobres x4 en train",0.515151515151515,0.710454558232367,0.662950527254604,0.765291908914729,0.931517237054212,"2026-10-23"
 "LGBM_X_6_detallado_hojas_31_iter_748_umbral_0_37","Boosting (LightGBM)","X_6_detallado",148,"hojas = 31; learning_rate = 0.04; lambda_l2 = 10; lambda_l1 = 0.1; rondas = 748",0.373737373737374,0.760051768766178,0.723710154452843,0.800236191860465,0.953112760079198,"2026-10-26"
+"EN_lambda_0p0001_alpha_025","Elastic Net","X_5_extendido",43,"alpha = 0.25; lambda = 1e-04",0.35,0.711474245115453,0.670263179031351,0.758085029069767,0.931762449159833,"2026-10-26"
