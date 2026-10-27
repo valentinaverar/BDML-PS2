@@ -25,9 +25,10 @@
 \begin{document}
 
 % 01. Overview obligatorio.
-\begin{frame}{LightGBM: el modelo ganador}
-\framesubtitle{Best Model Overview}
+\begin{frame}{El modelo ganador}
+
 \begin{columns}[T,onlytextwidth]
+
 \begin{column}{0.40\textwidth}
 \begin{block}{F1 público en Kaggle}
 \centering
@@ -36,63 +37,49 @@
 {\small F1 en CV: \textbf{\FoneCV}}
 \end{block}
 \end{column}
-\begin{column}{0.55\textwidth}
-\small
-\begin{tabular}{@{}ll@{}}
-\textbf{Modelo} & LightGBM (GBDT)\\
-Predictores & 1.296 variables, X7\\
-Hojas / rondas & 31 / 748\\
-Aprendizaje & 0,04\\
-Validación & 5 folds estratificados\\
-Umbral & \UmbralBest
-\end{tabular}
-\end{column}
-\end{columns}
+
+\begin{column}{0.56\textwidth}
+\textbf{Especificación del modelo}
 \medskip
 \small
-\textbf{Tres hallazgos para leer el resultado}
 \begin{itemize}
-\setlength{\itemsep}{0.2em}
-\item Vivienda y mercado laboral concentran la señal predictiva.
-\item Las relaciones observadas contienen curvaturas y umbrales.
-\item Aún queda fuera el \textbf{\Undercoverage} de los hogares pobres.
+\setlength{\itemsep}{0.4em}
+\item \textbf{Predictores:} 1.296 variables
+\item \textbf{Complejidad:} 31 hojas y 748 rondas
+\item \textbf{Learning rate:} 0,04
+\item \textbf{Validación:} 5 folds estratificados
+\item \textbf{Umbral óptimo:} \UmbralBest
 \end{itemize}
-\fuente{Equipo 03. Fuentes: registro de modelos, puntajes públicos de Kaggle y artifact de importancia.}
-\note{El puntaje público localmente registrado corresponde al envío del 25 de octubre de 2026. F1 CV: 0,768403942. El umbral es 0,393939393939394. La subcobertura usa los errores OOF registrados; no corresponde a las etiquetas ocultas de Kaggle.}
+\end{column}
+
+\end{columns}
+
+\vfill
+\fuente{Equipo 03. Fuentes: registro de modelos y puntajes públicos de Kaggle.}
+
+\note{El puntaje público corresponde al envío del 25 de octubre de 2026. F1 CV: 0,768403942. Umbral: 0,393939393939394.}
+
 \end{frame}
 
 % 02. Dimensionalidad e interpretación.
-\begin{frame}{1.296 predictores: cómo interpretarlos}
+\begin{frame}{El reto de la interpretabilidad}
 \small
-Agregamos información del hogar y de sus miembros en \textbf{1.296 variables derivadas}.
+Un LGBM con 1296 predictores es poco o nada interpretable por si sólo..
 \medskip
-\begin{columns}[T,onlytextwidth]
-\begin{column}{0.44\textwidth}
-\textbf{El costo de esa riqueza}
+\textbf{Se puede abordar este problema}
 \begin{itemize}
 \setlength{\itemsep}{0.6em}
-\item Medidas redundantes.
-\item Interacciones difíciles de leer.
-\item Menor interpretación directa.
+\item Importancia por permutación.
+\item Relacion con public policy y análisis socioeconómico.
+\item Balance entre muestras.
 \end{itemize}
-\end{column}
-\begin{column}{0.52\textwidth}
-\textbf{Una ruta para entenderla}
-\begin{enumerate}
-\setlength{\itemsep}{0.6em}
-\item \textbf{Permutar:} cuánto cae el F1.
-\item \textbf{Describir:} cómo cambia la pobreza.
-\item \textbf{Contrastar:} balance entre muestras.
-\end{enumerate}
-\end{column}
-\end{columns}
 \cierre{Podemos interpretar la predicción sin atribuirle efectos causales.}
 \fuente{Construcción de X7 y análisis descriptivo del proyecto. Una variable derivada no equivale a una pregunta de encuesta.}
 \note{X7 combina características del hogar, agregados por grupos de miembros, proporciones por categoría y medidas de personas concretas. La correlación puede repartir la importancia. Las curvas describen asociaciones marginales: no son efectos causales ni efectos parciales del modelo.}
 \end{frame}
 
 % 03. Ranking a la izquierda, mecanismos a la derecha.
-\begin{frame}{Qué variables aportan más señal}
+\begin{frame}{Variables con más poder predictivo}
 \begin{columns}[c,onlytextwidth]
 \begin{column}{0.57\textwidth}
 \includegraphics[width=\linewidth]{best_importancia_top15.pdf}
@@ -102,12 +89,12 @@ Agregamos información del hogar y de sus miembros en \textbf{1.296 variables de
 \textbf{Lectura económica}
 \begin{itemize}
 \setlength{\itemsep}{0.9em}
-\item \textbf{Vivienda:} recursos y valor locativo.
-\item \textbf{Formalidad:} estabilidad y protección.
-\item \textbf{Composición:} ingresos que se reparten.
+\item \textbf{Arriendo relativo:} arriendo normalizado por costo de vida
+\item \textbf{Tipo de trabajo} formal, tipo de actividad.
+\item \textbf{Composición:} fuentes y tipos de ingresos (rentas, pensiones, subsidios).
 \end{itemize}
 \medskip
-{\footnotesize Más caída del F1 implica mayor dependencia predictiva.}
+{\footnotesize Mayor caída del F1 tras permutación implica mayor poder predictvivo.}
 \end{column}
 \end{columns}
 \fuente{Permutación: promedio de 3 repeticiones, 5 folds y unos 2.000 hogares de validación por fold. Caídas en puntos de F1; no son efectos causales ni contribuciones aditivas.}
@@ -119,16 +106,30 @@ Agregamos información del hogar y de sus miembros en \textbf{1.296 variables de
 \vfill
 \begin{center}
 {\usebeamercolor[fg]{structure}\LARGE
-La señal de pobreza se concentra\\[0.35em]
-en la vivienda y en la\\[0.35em]
-capacidad laboral del hogar.}
+Arriendo, tipo de ocupación y fuentes de ingresos componen gran parte de la predicción.}
 \end{center}
 \vfill
 \note{Síntesis del ranking de importancia por permutación. No afirma causalidad ni que el resto de predictores sea prescindible sin volver a validar.}
 \end{frame}
 
-% 05. Selección original por mayor cambio al excluir Bogotá.
-\begin{frame}{Bogotá y las diferencias entre muestras}
+% 05 Cambio de sección
+\begin{frame}[plain]
+\vfill
+\begin{center}
+{\usebeamercolor[fg]{structure}\fontsize{48}{52}\selectfont\bfseries --}\par
+\vspace{0.5cm}
+{\usebeamercolor[fg]{structure}\rule{0.65\textwidth}{1.5pt}}\par
+\vspace{0.5cm}
+{\LARGE\bfseries Construcción del modelo}\par
+\vspace{0.35cm}
+{\normalsize\color{black!65}Entrenamiento, validación y optimización}\par
+\end{center}
+\vfill
+\end{frame}
+
+
+% 06. Selección original por mayor cambio al excluir Bogotá.
+\begin{frame}{Retos para la predicción: Bogotá}
 \begin{columns}[c,onlytextwidth]
 \begin{column}{0.60\textwidth}
 \includegraphics[width=\linewidth]{best_balance_original.pdf}
@@ -137,9 +138,9 @@ capacidad laboral del hogar.}
 \small
 \begin{itemize}
 \setlength{\itemsep}{0.8em}
-\item Bogotá pesa \textbf{\PorcBogota} en train y no aparece en test.
-\item Empleo formal y prestaciones muestran los mayores cambios.
-\item Excluirla acerca varias medias; no garantiza mejor predicción.
+\item Bogotá compone el \textbf{\PorcBogota} del conjunto de entrenamiento y no aparece en el de testeo.
+\item Ninguna variable muestra una diferencia importante respecto al test, aunque son estadísticamente existentes.
+\item Excluirla acerca varias medias; no garantiza mejor predicción (se verá más adelante).
 \end{itemize}
 \end{column}
 \end{columns}
@@ -147,8 +148,8 @@ capacidad laboral del hogar.}
 \note{No es una comparación directa Bogotá contra resto. Cada fila compara train con test, incluyendo o excluyendo Bogotá en train. La selección replica el cambio en el SMD absoluto; no es el ranking de importancia. El balance marginal no demuestra invariancia de la relación entre predictores y pobreza.}
 \end{frame}
 
-% 06. Asignar a todos a No pobre.
-\begin{frame}{El desbalance y un clasificador ingenuo}
+% 07. Asignar a todos a No pobre.
+\begin{frame}{Retos para la predicción: desbalance}
 \begin{columns}[c,onlytextwidth]
 \begin{column}{0.50\textwidth}
 \includegraphics[width=\linewidth]{best_distribucion_clase.pdf}
@@ -156,12 +157,12 @@ capacidad laboral del hogar.}
 \end{column}
 \begin{column}{0.45\textwidth}
 \small
-\textbf{Clasificar a todos como no pobres}
+\textbf{Clasificadore: nadie es pobre}
 \medskip
 
 \begin{tabular}{@{}lr@{}}
 \toprule
-Exactitud & \AccBase\\
+Accuracy & \AccBase\\
 \textbf{F1} & \textbf{\FoneBase}\\
 Sensibilidad & \SensBase\\
 Especificidad & \EspBase\\
@@ -169,46 +170,46 @@ Especificidad & \EspBase\\
 \end{tabular}
 \medskip
 
-No identificaríamos a ningún hogar pobre.
+No se identifican pobres pero se consigue accuracy del 80\%{} aprox.
 \end{column}
 \end{columns}
 \fuente{Distribución de Pobre en train. Clase positiva: hogar pobre. Métricas de asignar a todos a No pobre, sin entrenar un modelo.}
 \note{El 20,0194 por ciento es pobre. Asignar todos a no pobres produce 131.936 TN y 33.024 FN. F1 y sensibilidad son cero; exactitud: 79,9806 por ciento. No se muestra precisión positiva porque no hay predicciones positivas.}
 \end{frame}
 
-% 07. Cuatro formas, sin logit.
+% 08. Cuatro formas funcionales.
 \begin{frame}{Forma funcional de los principales predictores}
 \centering
 \includegraphics[width=0.98\textwidth]{best_datos_curvas.pdf}
 \smallskip
 
-{\small Las curvaturas y los umbrales observados motivan una especificación flexible.}
+{\small Las formas funcionales relevantes observadas motivan una especificación flexible.}
 \fuente{Cuatro primeros del ranking. Tasas por grupos de cuantiles, IC de Wilson del 95\%, casos válidos y rango P1--P99. UG: unidad de gasto; LP: línea de pobreza.}
 \note{Solo tasas observadas e intervalos. No se ajusta ni dibuja logit. Arriendo relativo y estimado se asocian negativamente con pobreza; miembros por formal, positivamente; la proporción cuya actividad principal es trabajar no es estrictamente monótona. Son asociaciones descriptivas, no PDP ni efectos causales. No prueban superioridad frente a un logit con transformaciones o a otro algoritmo de árboles. El cociente por formal excluye denominadores no válidos.}
 \end{frame}
 
-% 08. Configuración documentada y validación.
-\begin{frame}{Por qué LightGBM se ajusta a estos patrones}
+% 09. Configuración documentada y validación.
+\begin{frame}{Elección del modelo e hiperparámetros}
 \small
 \begin{tabular}{@{}L{0.36\textwidth}L{0.57\textwidth}@{}}
 \toprule
-\textbf{Desafío} & \textbf{Configuración seleccionada}\\
+\textbf{Desafío} & \textbf{LightGBM}\\
 \midrule
-Curvaturas e interacciones & Árboles: 31 hojas y 748 rondas\\[0.5em]
-Muchas variables y sobreajuste & 100 casos por hoja; L1/L2 = 0,1/10\\[0.5em]
-Control del aprendizaje & Tasa 0,04; 85\% de filas y variables\\[0.5em]
-Clase pobre minoritaria & Umbral \UmbralBest{} elegido por F1 OOF\\
+Modelo & Tras probar varios modelos tuneados, este obtuvo el mayor F1\\[0.5em]
+Umbral & Búsqueda exhaustiva del umbral\\
+Hiperparámetros  & Se probaron distintas configuraciones y se hizo busqueda cerca a las mejores.\\
+Estrategia de validación & 4-fold validation para entrenamiento (con Bogotá) + hold-out sin Bogotá \\
 \bottomrule
 \end{tabular}
 \medskip
 
-Con X7 y cinco folds: \textbf{LightGBM \FoneCV} frente a \textbf{XGBoost \FoneXgb}.
-\cierre{La flexibilidad motiva el modelo; el F1 de validación respalda su selección.}
+La capacidad de LGBM de ajustar formas funcionales complicada es clave en este problema
+\cierre{La buena elección de predictores y el umbral fueron determinantes.}
 \fuente{Configuración y resultados del script 11. Se documenta búsqueda de 100 umbrales; no se conserva una bitácora de búsqueda de hiperparámetros de LightGBM.}
 \note{La configuración se mantiene fija entre X5, X6 y X7. El umbral se optimiza sobre las mismas predicciones OOF usadas para reportar F1: no es validación anidada. Se entrena con log-loss. XGBoost también representa no linealidades e interacciones; la comparación empírica distingue los dos. La regularización controla el riesgo de sobreajuste, sin garantizar eliminarlo ni resolver las diferencias territoriales. F1 tampoco incorpora por sí solo costos sociales asimétricos.}
 \end{frame}
 
-% 09. Ranking del ganador, con Bogotá en el entrenamiento.
+% 10. Ranking del ganador, con Bogotá en el entrenamiento.
 \begin{frame}{El ganador sí se entrenó con Bogotá}
 \begin{columns}[c,onlytextwidth]
 \begin{column}{0.60\textwidth}
@@ -220,7 +221,7 @@ Con X7 y cinco folds: \textbf{LightGBM \FoneCV} frente a \textbf{XGBoost \FoneXg
 \setlength{\itemsep}{0.8em}
 \item Se conservaron los \textbf{\NBogota{} hogares} de Bogotá.
 \item La mayoría de variables clave tiene brechas pequeñas.
-\item Departamento conserva una diferencia territorial.
+\item Bogotá no fue un problema. El mejor modelo mantuvo a Bogotá en su entrenamiento.
 \end{itemize}
 \end{column}
 \end{columns}
@@ -228,12 +229,12 @@ Con X7 y cinco folds: \textbf{LightGBM \FoneCV} frente a \textbf{XGBoost \FoneXg
 \note{Esta figura cambia la selección de la anterior: usa importancia por permutación. El ganador entrenó con Bogotá; este diagnóstico no implica reentrenamiento ni evaluación sin ella. Dominio es indicador de RESTO URBANO; tenencia, de arriendo. Departamento usa el indicador modal del artifact: SMD con Bogotá aproximadamente 0,370 y sin Bogotá indefinido, no cero. Conservar Bogotá requiere evaluar desempeño territorial; el balance solo no basta.}
 \end{frame}
 
-% 10. Diagnóstico con conteos reconstruidos y verificados.
+% 11. Diagnóstico con conteos reconstruidos y verificados.
 \begin{frame}{Diagnóstico del modelo ganador}
 \begin{columns}[c,onlytextwidth]
 \begin{column}{0.56\textwidth}
 \small
-\textbf{Realidad}
+\textbf{}
 \medskip
 
 \begin{tabular}{@{}lrr@{}}
@@ -265,7 +266,7 @@ AUC ROC & \AucBest\\
 \note{TP = 26.236; FN = 6.788; FP = 9.027; TN = 122.909. No provienen de un archivo nuevo de predicciones OOF. El script verifica precisión y F1 con tolerancia 1e-10. El umbral se elige y evalúa con las mismas OOF: posible optimismo de selección. No son métricas separadas del test de Kaggle.}
 \end{frame}
 
-% 11. Consecuencias de los errores y decisión del umbral.
+% 12. Consecuencias de los errores y decisión del umbral.
 \begin{frame}{Filtración y subcobertura}
 \begin{columns}[T,onlytextwidth]
 \begin{column}{0.47\textwidth}
@@ -294,7 +295,7 @@ Bajar el umbral amplía cobertura y puede aumentar la filtración; subirlo restr
 \note{Filtración es 1 menos precisión; subcobertura, 1 menos sensibilidad. Filtración no es la tasa de falsos positivos entre no pobres (6,84 por ciento). Bajar el umbral reduce o mantiene FN y aumenta o mantiene FP; la proporción de filtración no tiene monotonicidad garantizada en la muestra. Maximizar F1 no incorpora presupuesto, severidad de pobreza ni costos sociales asimétricos.}
 \end{frame}
 
-% 12. Viabilidad y cierre.
+% 13. Viabilidad y cierre.
 \begin{frame}{Condiciones para una política real}
 \small
 \begin{tabular}{@{}L{0.33\textwidth}L{0.59\textwidth}@{}}
