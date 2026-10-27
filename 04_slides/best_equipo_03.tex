@@ -30,17 +30,29 @@
 \end{frame}
 
 % 00B. Contenido de la presentación.
-\begin{frame}{Contenido de la presentación}
+\begin{frame}{Contenido}
 \small
 \begin{enumerate}
 
 \setlength{\itemsep}{1.0em}
 
-\item \textbf{El modelo ganador}
-\item \textbf{Retos de la predicción}
-\item \textbf{Construcción del modelo}
-\item \textbf{Resultados y diagnóstico}
-\item \textbf{Implicaciones de política pública}
+\item Descripción del modelo ganador
+
+\item Caracterización del problema
+\begin{itemize}
+  \item ¿Qué datos tenemos?
+  \item Retos para la predicción.
+\end{itemize}
+
+\item Construcción del modelo
+\begin{itemize}
+  \item Proceso de elección.
+  \item Resultados
+  \item ¿Por qué funcionó?.
+\end{itemize}
+
+\item \textbf{Variable importance}
+\item Implicaciones de política pública
 
 
 \end{enumerate}
@@ -83,6 +95,169 @@
 
 \end{frame}
 
+% 02 Caracterizacion del problema
+
+\begin{frame}{¿Qué datos tenemos?}
+\small
+\begin{itemize}
+\setlength{\itemsep}{1em}
+
+\item 4 bases de datos. una para hogar, otra de personas para entrenamiento y para evaluación
+
+\item 231.128 hogares.
+\begin{itemize}
+    \item Train: 164.960 hogares.
+    \item Test: 66.168 hogares.
+\end{itemize}
+
+\item Train incluye Bogotá, mientras que test no.
+
+\item Predictores disponibles
+\begin{itemize}
+    \item Train: 148.
+    \item Test: 79.
+\end{itemize}
+
+\end{itemize}
+\end{frame}
+
+
+% 06. Selección original por mayor cambio al excluir Bogotá.
+\begin{frame}{Caracterización: Bogotá}
+\begin{columns}[c,onlytextwidth]
+\begin{column}{0.60\textwidth}
+\includegraphics[width=\linewidth]{best_balance_original.pdf}
+\end{column}
+\begin{column}{0.36\textwidth}
+\small
+\begin{itemize}
+\setlength{\itemsep}{0.8em}
+\item Bogotá compone el \textbf{\PorcBogota} del conjunto de entrenamiento y no aparece en el de testeo.
+\item Ninguna variable muestra una diferencia importante respecto al test, aunque son estadísticamente existentes.
+\item Excluirla acerca varias medias; no garantiza mejor predicción (se verá más adelante).
+\end{itemize}
+\end{column}
+\end{columns}
+\fuente{Comparación original del script 04: 15 variables con mayor cambio en el valor absoluto del SMD al excluir Bogotá. Diferencia estandarizada train -- test e IC del 95\%.}
+\note{No es una comparación directa Bogotá contra resto. Cada fila compara train con test, incluyendo o excluyendo Bogotá en train. La selección replica el cambio en el SMD absoluto; no es el ranking de importancia. El balance marginal no demuestra invariancia de la relación entre predictores y pobreza.}
+\end{frame}
+
+
+% 07. Asignar a todos a No pobre.
+\begin{frame}{Caracterización: desbalance}
+\begin{columns}[c,onlytextwidth]
+\begin{column}{0.50\textwidth}
+\includegraphics[width=\linewidth]{best_distribucion_clase.pdf}
+\centering{\footnotesize Train: \NTrain{} hogares}
+\end{column}
+\begin{column}{0.45\textwidth}
+\small
+\textbf{Clasificador ingenuo: nadie es pobre}
+\medskip
+
+\begin{tabular}{@{}lr@{}}
+\toprule
+Accuracy & \AccBase\\
+\textbf{F1} & \textbf{\FoneBase}\\
+Sensibilidad & \SensBase\\
+Especificidad & \EspBase\\
+\bottomrule
+\end{tabular}
+\medskip
+
+No se identifican pobres pero se consigue accuracy del 80\%{} aprox.
+\end{column}
+\end{columns}
+\fuente{Distribución de Pobre en train. Clase positiva: hogar pobre. Métricas de asignar a todos a No pobre, sin entrenar un modelo.}
+\note{El 20,0194 por ciento es pobre. Asignar todos a no pobres produce 131.936 TN y 33.024 FN. F1 y sensibilidad son cero; exactitud: 79,9806 por ciento. No se muestra precisión positiva porque no hay predicciones positivas.}
+\end{frame}
+
+% 05 Cambio de sección
+\begin{frame}[plain]
+\vfill
+\begin{center}
+{\usebeamercolor[fg]{structure}\fontsize{48}{52}\selectfont\bfseries --}\par
+\vspace{0.5cm}
+{\usebeamercolor[fg]{structure}\rule{0.65\textwidth}{1.5pt}}\par
+\vspace{0.5cm}
+{\LARGE\bfseries Construcción del modelo}\par
+\vspace{0.35cm}
+{\normalsize\color{black!65}Entrenamiento, validación y optimización}\par
+\end{center}
+\vfill
+\end{frame}
+
+% 09. Configuración documentada y validación.
+\begin{frame}{Elección del modelo e hiperparámetros}
+\small
+\begin{tabular}{@{}L{0.36\textwidth}L{0.57\textwidth}@{}}
+\toprule
+\textbf{Desafío} & \textbf{LightGBM}\\
+\midrule
+Modelo & Tras probar varios modelos tuneados, este obtuvo el mayor F1\\[0.5em]
+Umbral & Búsqueda exhaustiva del umbral\\
+Hiperparámetros  & Se probaron distintas configuraciones y se hizo busqueda cerca a las mejores.\\
+Estrategia de validación & 4-fold validation para entrenamiento (con Bogotá) + hold-out sin Bogotá \\
+\bottomrule
+\end{tabular}
+\medskip
+
+
+\cierre{La buena elección de predictores y el umbral fueron determinantes.}
+\fuente{Configuración y resultados del script 11. Se documenta búsqueda de 100 umbrales; no se conserva una bitácora de búsqueda de hiperparámetros de LightGBM.}
+\note{La configuración se mantiene fija entre X5, X6 y X7. El umbral se optimiza sobre las mismas predicciones OOF usadas para reportar F1: no es validación anidada. Se entrena con log-loss. XGBoost también representa no linealidades e interacciones; la comparación empírica distingue los dos. La regularización controla el riesgo de sobreajuste, sin garantizar eliminarlo ni resolver las diferencias territoriales. F1 tampoco incorpora por sí solo costos sociales asimétricos.}
+\end{frame}
+
+
+% 08. Cuatro formas funcionales.
+\begin{frame}{¿Por qué funcionó el LGBM?}
+\centering
+\includegraphics[width=0.98\textwidth]{best_datos_curvas.pdf}
+\smallskip
+
+{\small La capacidad de LGBM de ajustar formas funcionales complicada es clave en este problema}
+\fuente{Cuatro primeros del ranking. Tasas por grupos de cuantiles, IC de Wilson del 95\%, casos válidos y rango P1--P99. UG: unidad de gasto; LP: línea de pobreza.}
+\note{Solo tasas observadas e intervalos. No se ajusta ni dibuja logit. Arriendo relativo y estimado se asocian negativamente con pobreza; miembros por formal, positivamente; la proporción cuya actividad principal es trabajar no es estrictamente monótona. Son asociaciones descriptivas, no PDP ni efectos causales. No prueban superioridad frente a un logit con transformaciones o a otro algoritmo de árboles. El cociente por formal excluye denominadores no válidos.}
+\end{frame}
+
+% 10. Ranking del ganador, con Bogotá en el entrenamiento.
+\begin{frame}{¿Por qué funcionó el LGBM?}
+\begin{columns}[c,onlytextwidth]
+\begin{column}{0.60\textwidth}
+\includegraphics[width=\linewidth]{best_balance_bogota.pdf}
+\end{column}
+\begin{column}{0.36\textwidth}
+\small
+\begin{itemize}
+\setlength{\itemsep}{0.8em}
+\item Se conservaron los \textbf{\NBogota{} hogares} de Bogotá.
+\item La mayoría de variables clave tiene brechas pequeñas (VI se ahondará más adelante).
+\item Bogotá no fue un problema. El mejor modelo mantuvo a Bogotá en su entrenamiento.
+\end{itemize}
+\end{column}
+\end{columns}
+\fuente{15 principales del LightGBM; SMD train -- test e IC del 95\%. Categóricas: indicador modal. El SMD de departamento sin Bogotá no se define por varianza nula.}
+\note{Esta figura cambia la selección de la anterior: usa importancia por permutación. El ganador entrenó con Bogotá; este diagnóstico no implica reentrenamiento ni evaluación sin ella. Dominio es indicador de RESTO URBANO; tenencia, de arriendo. Departamento usa el indicador modal del artifact: SMD con Bogotá aproximadamente 0,370 y sin Bogotá indefinido, no cero. Conservar Bogotá requiere evaluar desempeño territorial; el balance solo no basta.}
+\end{frame}
+
+% 02 Caracterizacion del problema
+
+\begin{frame}{¿Por qué funcionó?}
+\small
+
+\begin{itemize}
+\setlength{\itemsep}{1em}
+
+\item LGBM ajusta muy bien a formas complejas.
+
+\item La búsqueda del umbral óptimo permitió abordar el desbalance.
+
+\item Bogotá no añadía diferencias sustanciales, lo que peritió aprovecharlo.
+
+\end{itemize}
+
+\end{frame}
+
 % 02. Dimensionalidad e interpretación.
 \begin{frame}{El reto de la interpretabilidad}
 \small
@@ -93,7 +268,6 @@ Se puede abordar este problema
 \setlength{\itemsep}{0.6em}
 \item Importancia por permutación.
 \item Relacion con public policy y análisis socioeconómico.
-\item Balance entre muestras.
 \end{itemize}
 \cierre{Podemos interpretar la predicción sin atribuirle efectos causales.}
 \fuente{Construcción de X7 y análisis descriptivo del proyecto. Una variable derivada no equivale a una pregunta de encuesta.}
@@ -108,7 +282,7 @@ Se puede abordar este problema
 \end{column}
 \begin{column}{0.39\textwidth}
 \small
-\textbf{Lectura económica}
+\textbf{Componentes clave}
 \begin{itemize}
 \setlength{\itemsep}{0.9em}
 \item \textbf{Arriendo relativo:} arriendo normalizado por costo de vida
@@ -134,122 +308,8 @@ Arriendo, tipo de ocupación y fuentes de ingresos componen gran parte de la pre
 \note{Síntesis del ranking de importancia por permutación. No afirma causalidad ni que el resto de predictores sea prescindible sin volver a validar.}
 \end{frame}
 
-% 05 Cambio de sección
-\begin{frame}[plain]
-\vfill
-\begin{center}
-{\usebeamercolor[fg]{structure}\fontsize{48}{52}\selectfont\bfseries --}\par
-\vspace{0.5cm}
-{\usebeamercolor[fg]{structure}\rule{0.65\textwidth}{1.5pt}}\par
-\vspace{0.5cm}
-{\LARGE\bfseries Construcción del modelo}\par
-\vspace{0.35cm}
-{\normalsize\color{black!65}Entrenamiento, validación y optimización}\par
-\end{center}
-\vfill
-\end{frame}
 
 
-% 06. Selección original por mayor cambio al excluir Bogotá.
-\begin{frame}{Retos para la predicción: Bogotá}
-\begin{columns}[c,onlytextwidth]
-\begin{column}{0.60\textwidth}
-\includegraphics[width=\linewidth]{best_balance_original.pdf}
-\end{column}
-\begin{column}{0.36\textwidth}
-\small
-\begin{itemize}
-\setlength{\itemsep}{0.8em}
-\item Bogotá compone el \textbf{\PorcBogota} del conjunto de entrenamiento y no aparece en el de testeo.
-\item Ninguna variable muestra una diferencia importante respecto al test, aunque son estadísticamente existentes.
-\item Excluirla acerca varias medias; no garantiza mejor predicción (se verá más adelante).
-\end{itemize}
-\end{column}
-\end{columns}
-\fuente{Comparación original del script 04: 15 variables con mayor cambio en el valor absoluto del SMD al excluir Bogotá. Diferencia estandarizada train -- test e IC del 95\%.}
-\note{No es una comparación directa Bogotá contra resto. Cada fila compara train con test, incluyendo o excluyendo Bogotá en train. La selección replica el cambio en el SMD absoluto; no es el ranking de importancia. El balance marginal no demuestra invariancia de la relación entre predictores y pobreza.}
-\end{frame}
-
-% 07. Asignar a todos a No pobre.
-\begin{frame}{Retos para la predicción: desbalance}
-\begin{columns}[c,onlytextwidth]
-\begin{column}{0.50\textwidth}
-\includegraphics[width=\linewidth]{best_distribucion_clase.pdf}
-\centering{\footnotesize Train: \NTrain{} hogares}
-\end{column}
-\begin{column}{0.45\textwidth}
-\small
-\textbf{Clasificadore: nadie es pobre}
-\medskip
-
-\begin{tabular}{@{}lr@{}}
-\toprule
-Accuracy & \AccBase\\
-\textbf{F1} & \textbf{\FoneBase}\\
-Sensibilidad & \SensBase\\
-Especificidad & \EspBase\\
-\bottomrule
-\end{tabular}
-\medskip
-
-No se identifican pobres pero se consigue accuracy del 80\%{} aprox.
-\end{column}
-\end{columns}
-\fuente{Distribución de Pobre en train. Clase positiva: hogar pobre. Métricas de asignar a todos a No pobre, sin entrenar un modelo.}
-\note{El 20,0194 por ciento es pobre. Asignar todos a no pobres produce 131.936 TN y 33.024 FN. F1 y sensibilidad son cero; exactitud: 79,9806 por ciento. No se muestra precisión positiva porque no hay predicciones positivas.}
-\end{frame}
-
-% 08. Cuatro formas funcionales.
-\begin{frame}{Forma funcional de los principales predictores}
-\centering
-\includegraphics[width=0.98\textwidth]{best_datos_curvas.pdf}
-\smallskip
-
-{\small Las formas funcionales relevantes observadas motivan una especificación flexible.}
-\fuente{Cuatro primeros del ranking. Tasas por grupos de cuantiles, IC de Wilson del 95\%, casos válidos y rango P1--P99. UG: unidad de gasto; LP: línea de pobreza.}
-\note{Solo tasas observadas e intervalos. No se ajusta ni dibuja logit. Arriendo relativo y estimado se asocian negativamente con pobreza; miembros por formal, positivamente; la proporción cuya actividad principal es trabajar no es estrictamente monótona. Son asociaciones descriptivas, no PDP ni efectos causales. No prueban superioridad frente a un logit con transformaciones o a otro algoritmo de árboles. El cociente por formal excluye denominadores no válidos.}
-\end{frame}
-
-% 09. Configuración documentada y validación.
-\begin{frame}{Elección del modelo e hiperparámetros}
-\small
-\begin{tabular}{@{}L{0.36\textwidth}L{0.57\textwidth}@{}}
-\toprule
-\textbf{Desafío} & \textbf{LightGBM}\\
-\midrule
-Modelo & Tras probar varios modelos tuneados, este obtuvo el mayor F1\\[0.5em]
-Umbral & Búsqueda exhaustiva del umbral\\
-Hiperparámetros  & Se probaron distintas configuraciones y se hizo busqueda cerca a las mejores.\\
-Estrategia de validación & 4-fold validation para entrenamiento (con Bogotá) + hold-out sin Bogotá \\
-\bottomrule
-\end{tabular}
-\medskip
-
-La capacidad de LGBM de ajustar formas funcionales complicada es clave en este problema
-\cierre{La buena elección de predictores y el umbral fueron determinantes.}
-\fuente{Configuración y resultados del script 11. Se documenta búsqueda de 100 umbrales; no se conserva una bitácora de búsqueda de hiperparámetros de LightGBM.}
-\note{La configuración se mantiene fija entre X5, X6 y X7. El umbral se optimiza sobre las mismas predicciones OOF usadas para reportar F1: no es validación anidada. Se entrena con log-loss. XGBoost también representa no linealidades e interacciones; la comparación empírica distingue los dos. La regularización controla el riesgo de sobreajuste, sin garantizar eliminarlo ni resolver las diferencias territoriales. F1 tampoco incorpora por sí solo costos sociales asimétricos.}
-\end{frame}
-
-% 10. Ranking del ganador, con Bogotá en el entrenamiento.
-\begin{frame}{El ganador sí se entrenó con Bogotá}
-\begin{columns}[c,onlytextwidth]
-\begin{column}{0.60\textwidth}
-\includegraphics[width=\linewidth]{best_balance_bogota.pdf}
-\end{column}
-\begin{column}{0.36\textwidth}
-\small
-\begin{itemize}
-\setlength{\itemsep}{0.8em}
-\item Se conservaron los \textbf{\NBogota{} hogares} de Bogotá.
-\item La mayoría de variables clave tiene brechas pequeñas.
-\item Bogotá no fue un problema. El mejor modelo mantuvo a Bogotá en su entrenamiento.
-\end{itemize}
-\end{column}
-\end{columns}
-\fuente{15 principales del LightGBM; SMD train -- test e IC del 95\%. Categóricas: indicador modal. El SMD de departamento sin Bogotá no se define por varianza nula.}
-\note{Esta figura cambia la selección de la anterior: usa importancia por permutación. El ganador entrenó con Bogotá; este diagnóstico no implica reentrenamiento ni evaluación sin ella. Dominio es indicador de RESTO URBANO; tenencia, de arriendo. Departamento usa el indicador modal del artifact: SMD con Bogotá aproximadamente 0,370 y sin Bogotá indefinido, no cero. Conservar Bogotá requiere evaluar desempeño territorial; el balance solo no basta.}
-\end{frame}
 
 % 11. Diagnóstico con conteos reconstruidos y verificados.
 \begin{frame}{Diagnóstico del modelo ganador}
