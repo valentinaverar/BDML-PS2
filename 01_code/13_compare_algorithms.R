@@ -181,7 +181,10 @@ ggsave("02_outputs/figures/pobreza_arriendo_deciles.pdf", grafico_arriendo,
 
 # 1. Resumen de los siete algoritmos requeridos ----------------------------------
 # Para cada algoritmo de la lista del Problem Set, su mejor F1 de validación
-# cruzada (con cualquier conjunto) y su mejor puntaje público en Kaggle.
+# cruzada (con cualquier conjunto) y el puntaje público en Kaggle de esa misma
+# variante. El puntaje se une por el nombre del archivo, para no mezclar el F1
+# de un modelo con el puntaje de otro: si la mejor variante no se envió a
+# Kaggle, la celda queda vacía.
 # XGBoost, LightGBM y AdaBoost son implementaciones de boosting.
 fun_categoria <- function(.algoritmo) {
   case_when(.algoritmo %in% c("Boosting (XGBoost)", "Boosting (LightGBM)",
@@ -201,17 +204,15 @@ mejor_cv <- registro |>
   # El conjunto se toma antes de resumir f1_cv, porque summarize() usa el
   # valor ya resumido en las columnas siguientes.
   summarize(variantes = n(),
+            archivo = archivo[which.max(f1_cv)],
             conjunto = etiqueta_conjunto[conjunto[which.max(f1_cv)]],
             f1_cv = max(f1_cv),
             .groups = "drop")
-mejor_kaggle <- read.csv("00_data/kaggle_scores.csv") |>
-  mutate(categoria = fun_categoria(algoritmo)) |>
-  group_by(categoria) |>
-  summarize(kaggle = max(puntaje_publico), .groups = "drop")
 
 resumen_algoritmos <- tibble(categoria = orden_algoritmos) |>
   left_join(mejor_cv, by = "categoria") |>
-  left_join(mejor_kaggle, by = "categoria")
+  left_join(kaggle, by = "archivo") |>
+  rename(kaggle = puntaje_publico)
 write.csv(resumen_algoritmos, "02_outputs/tables/resumen_algoritmos.csv",
           row.names = FALSE)
 writeLines(kable(resumen_algoritmos |>
@@ -219,7 +220,9 @@ writeLines(kable(resumen_algoritmos |>
                              `Variantes evaluadas` = variantes,
                              `Mejor F1 CV` = fun_coma(f1_cv),
                              Conjunto = conjunto,
-                             `Mejor puntaje Kaggle` = fun_coma(kaggle, 2)),
+                             `Kaggle (misma variante)` =
+                               if_else(is.na(kaggle), "No se envió",
+                                       fun_coma(kaggle, 2))),
                  format = "latex", booktabs = TRUE, linesep = "",
                  align = c("l", "r", "r", "l", "r")),
            "02_outputs/tables/resumen_algoritmos.tex")
