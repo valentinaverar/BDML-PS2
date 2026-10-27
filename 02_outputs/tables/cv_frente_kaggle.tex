@@ -1,0 +1,21 @@
+
+\begin{tabular}{lllrrr}
+\toprule
+Modelo & Conjunto & Rebalanceo & F1 CV & Kaggle & Diferencia\\
+\midrule
+LightGBM & X\_7 & Sin rebalanceo & 0,768 & 0,77 & 0,002\\
+XGBoost & X\_7 & Sin rebalanceo & 0,762 & 0,76 & -0,002\\
+XGBoost & X\_6 & Sin rebalanceo & 0,757 & 0,76 & 0,003\\
+Random Forest (grilla CV) & X\_5 & Sin rebalanceo & 0,715 & 0,71 & -0,005\\
+AdaBoost & X\_5 & Sin rebalanceo & 0,712 & 0,71 & -0,002\\
+Logit & X\_5 & Sin rebalanceo & 0,711 & 0,71 & -0,001\\
+Random Forest (fijo) & X\_5 & Sin rebalanceo & 0,704 & 0,70 & -0,004\\
+CART & X\_5 & Upsampling & 0,685 & 0,68 & -0,005\\
+Logit & X\_4 & Sin rebalanceo & 0,680 & 0,68 & 0,000\\
+CART & X\_5 & Sin rebalanceo & 0,686 & 0,67 & -0,016\\
+Naive Bayes & X\_5 & Sin rebalanceo & 0,644 & 0,64 & -0,004\\
+Logit & X\_3 & Sin rebalanceo & 0,605 & 0,61 & 0,005\\
+Logit & X\_2 & Sin rebalanceo & 0,557 & 0,56 & 0,003\\
+Logit & X\_1 & Sin rebalanceo & 0,521 & 0,53 & 0,009\\
+\bottomrule
+\end{tabular}
