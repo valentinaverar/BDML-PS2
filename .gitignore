@@ -10,7 +10,7 @@
 !00_data/raw/.gitkeep
 
 # Datos intermedios generados por el código
-03_temp/
+
 
 # Credenciales de Kaggle: NUNCA se suben al repositorio
 kaggle.json
