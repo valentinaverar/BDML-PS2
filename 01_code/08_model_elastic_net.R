@@ -36,8 +36,9 @@ pacman::p_load(tidyverse, caret, dplyr, pROC, glmnet)
 source("01_code/functions/fun_metricas.R")
 source("01_code/functions/fun_save_submission.R")
 
-# Reutilizar CV existente cuando esté disponible.
-REENTRENAR_CV <- FALSE
+# Reutilizar CV existente cuando esté disponible. Se deja en TRUE: el
+# archivo guardado en 03_temp/ puede venir de otro conjunto de predictores.
+REENTRENAR_CV <- TRUE
 
 # Ejecutar pruebas geográficas de sensibilidad.
 CORRER_PRUEBAS_BOGOTA <- TRUE
@@ -51,7 +52,7 @@ test <- readRDS("03_temp/test_clean.rds")
 predictores <- readRDS("03_temp/predictores.rds")
 cv_folds_full <- readRDS("03_temp/cv_folds.rds")
 
-X <- predictores$X_5_ampliado
+X <- predictores$X_5_extendido
 
 stopifnot(
   all(X %in% names(train)),
@@ -268,6 +269,23 @@ alpha_final <- mejor$alpha
 lambda_final <- mejor$lambda
 umbral_final <- mejor$Umbral
 
+# Registro con las predicciones fuera de muestra de la combinación elegida,
+# para la comparación de algoritmos.
+oof_mejor <- modelo_cv$pred %>%
+  filter(alpha == alpha_final, lambda == lambda_final) %>%
+  arrange(rowIndex)
+
+fun_registrar_oof(
+  .archivo = nombre_enet(lambda = lambda_final, alpha = alpha_final),
+  .algoritmo = "Elastic Net",
+  .conjunto = "X_5_extendido",
+  .n_predictores = length(X),
+  .hiperparametros = paste0("alpha = ", alpha_final, "; lambda = ", lambda_final),
+  .obs = oof_mejor$obs,
+  .prob = oof_mejor$Yes,
+  .umbral = umbral_final
+)
+
 cat("\n=== TOP 10 COMBINACIONES ===\n")
 
 print(
@@ -421,6 +439,17 @@ stopifnot(
   all(prob_test_final >= 0 & prob_test_final <= 1)
 )
 
+# Se guardan las predicciones fuera de muestra de la combinación elegida,
+# las del test y los coeficientes del modelo final, para la comparación de
+# algoritmos (13_compare_algorithms.R).
+saveRDS(
+  list(oof = oof_mejor, prob_test = prob_test_final, umbral = umbral_final,
+       alpha = alpha_final, lambda = lambda_final,
+       coeficientes = as.matrix(coef(modelo_final, s = lambda_final))),
+  file.path("03_temp", paste0(nombre_enet(lambda = lambda_final,
+                                          alpha = alpha_final), ".rds"))
+)
+
 
 # 8. SUBMISSION: ELASTIC NET SELECCIONADO -------------------
 
@@ -562,7 +591,7 @@ train <- readRDS("03_temp/train_clean.rds")
 predictores <- readRDS("03_temp/predictores.rds")
 cv_folds <- readRDS("03_temp/cv_folds.rds")
 
-X <- predictores$X_5_ampliado
+X <- predictores$X_5_extendido
 
 alpha_enet <- 0.5
 lambda_enet <- 0.0001

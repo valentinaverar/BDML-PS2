@@ -107,30 +107,3 @@ fun_save_submission <- function(.db_test, .prob, .umbral, .nombre,
 
   invisible(db_submission)
 }
-
-
-##########################################################
-# AMPLIACION LIGHTGBM - SOLO CODIGO ANADIDO
-# Se amplia la misma funcion para proteger resultados anteriores cuando
-# .proteger=TRUE; las llamadas previas mantienen su comportamiento original.
-##########################################################
-fun_save_submission <- local({
-  .original <- fun_save_submission
-  function(.db_test, .prob, .umbral, .nombre,
-           .dir = "02_outputs/predictions", .sample = "00_data/raw/sample_submission.csv",
-           .proteger = FALSE) {
-    if (isTRUE(.proteger)) {
-      if (length(.prob) != nrow(.db_test) || any(!is.finite(.prob)) ||
-          any(.prob < 0 | .prob > 1) || anyNA(.db_test$id) || anyDuplicated(.db_test$id)) {
-        stop("IDs o probabilidades invalidos para la prediccion local protegida.")
-      }
-      if (length(.umbral) != 1L || !is.finite(.umbral) || .umbral < 0 || .umbral > 1) {
-        stop("El umbral debe ser un numero finito entre cero y uno.")
-      }
-      ruta <- file.path(.dir, paste0(.nombre, ".csv"))
-      if (file.exists(ruta)) stop("El archivo ya existe; use un nombre nuevo para conservarlo: ", ruta)
-    }
-    .original(.db_test = .db_test, .prob = .prob, .umbral = .umbral,
-              .nombre = .nombre, .dir = .dir, .sample = .sample)
-  }
-})

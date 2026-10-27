@@ -168,3 +168,44 @@ fun_registrar_modelo <- function(.fila,
   write.csv(registro, .ruta, row.names = FALSE)
   invisible(registro)
 }
+
+fun_registrar_oof <- function(.archivo, .algoritmo, .conjunto, .n_predictores,
+                              .hiperparametros, .obs, .prob, .umbral) {
+  #' Registrar una variante a partir de sus predicciones fuera de muestra
+  #'
+  #' @description \code{fun_registrar_oof()} calcula las métricas de
+  #' validación cruzada de una variante (F1, precisión y recall con el umbral
+  #' elegido, y el AUC) y la agrega a la tabla de registro con
+  #' \code{fun_registrar_modelo()}. Sirve para los modelos que no se
+  #' entrenan con caret (LPM, Random Forest, XGBoost), de modo que todos
+  #' queden en la misma tabla y se puedan comparar.
+  #'
+  #' @param .archivo \code{character}. Nombre del envío (sin .csv).
+  #' @param .algoritmo \code{character}. Nombre del algoritmo.
+  #' @param .conjunto \code{character}. Conjunto de predictores.
+  #' @param .n_predictores \code{integer}. Número de predictores.
+  #' @param .hiperparametros \code{character}. Descripción de los
+  #' hiperparámetros.
+  #' @param .obs Clase observada (factor con niveles "Yes" y "No").
+  #' @param .prob \code{numeric}. Probabilidad (o puntaje) fuera de muestra.
+  #' @param .umbral \code{numeric}. Umbral elegido.
+  #'
+  #' @returns La tabla de registro actualizada (invisible).
+  metricas <- fun_metricas_umbral(.obs, .prob, .umbral)
+  roc_obj <- pROC::roc(response = .obs, predictor = .prob,
+                       levels = c("No", "Yes"), direction = "<",
+                       quiet = TRUE)
+  fun_registrar_modelo(tibble(
+    archivo = .archivo,
+    algoritmo = .algoritmo,
+    conjunto = .conjunto,
+    n_predictores = .n_predictores,
+    hiperparametros = .hiperparametros,
+    umbral = .umbral,
+    f1_cv = metricas$F1,
+    precision_cv = metricas$precision,
+    recall_cv = metricas$recall,
+    auc_cv = as.numeric(pROC::auc(roc_obj)),
+    fecha = as.character(Sys.Date())
+  ))
+}

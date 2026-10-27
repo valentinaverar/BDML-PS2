@@ -1,0 +1,11 @@
+
+\begin{tabular}{lll}
+\toprule
+Variante & Hiperparámetros & F1 CV\\
+\midrule
+Elastic Net & alpha 0,25; lambda 0,0001 (elegidos por CV) & 0,711\\
+Logit & Sin penalización & 0,711\\
+Random Forest (fijo) & mtry 6, nodo mínimo 10, 300 árboles (fijos) & 0,704\\
+Random Forest (grilla CV) & mtry 31, nodo mínimo 20, 300 árboles (elegidos por CV) & 0,715\\
+\bottomrule
+\end{tabular}

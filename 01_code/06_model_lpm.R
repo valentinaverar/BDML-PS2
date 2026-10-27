@@ -1,6 +1,6 @@
 ##########################################################
 # 06_model_lpm.R
-# LPM con 10 y 41 predictores:
+# LPM con 10 predictores y con el conjunto X_5_extendido (43):
 #   1. CV de 5 folds y selección del umbral por F1
 #   2. Importancia de variables por permutación (5 folds)
 #   3. Submissions para Kaggle
@@ -24,7 +24,8 @@
 #   4. Guardar el envío con fun_save_submission().
 # ÚNICOS ARCHIVOS GENERADOS:
 #   02_outputs/predictions/LPM_10.csv
-#   02_outputs/predictions/LPM_41.csv
+#   02_outputs/predictions/LPM_X_5_extendido.csv
+# Además, una fila por variante en 02_outputs/tables/registro_modelos.csv.
 ##########################################################
 
 # 0. PAQUETES Y FUNCIONES COMPARTIDAS -----------------------
@@ -46,8 +47,11 @@ X_10 <- c(
   "num_minors", "num_old", "cat_maxEduc", "prop_ocupados",
   "cat_pos_jefe", "bin_head_male", "bin_hogar_pensionado"
 )
-X_41 <- predictores$X_5_ampliado
-variantes <- list(LPM_10 = X_10, LPM_41 = X_41)
+# X_5_extendido es el conjunto común con que se comparan todos los
+# algoritmos.
+X_5 <- predictores$X_5_extendido
+variantes <- list(LPM_10 = X_10, LPM_X_5_extendido = X_5)
+conjuntos <- c(LPM_10 = "LPM_10", LPM_X_5_extendido = "X_5_extendido")
 
 umbrales <- seq(0.10, 0.60, by = 0.01)
 n_perm <- 3L
@@ -141,6 +145,14 @@ for (nombre in names(variantes)) {
   umbral <- mejor$Umbral
   resultados_cv_lpm[[nombre]] <- tabla_umbrales
   
+  # Registro con las predicciones fuera de muestra, para la comparación de
+  # algoritmos.
+  fun_registrar_oof(.archivo = nombre, .algoritmo = "LPM",
+                    .conjunto = conjuntos[[nombre]],
+                    .n_predictores = length(variables),
+                    .hiperparametros = "ninguno", .obs = train$Pobre,
+                    .prob = scores_oof, .umbral = umbral)
+  
   cat("\nTOP 10 UMBRALES:\n")
   print(head(tabla_umbrales, 10), digits = 7)
   cat("F1 OOF:", round(mejor$F1, 7),
@@ -212,11 +224,11 @@ for (nombre in names(variantes)) {
 
 # 4. TABLAS FINALES EN MEMORIA -------------------------------
 importancia_lpm_10 <- resumen_importancia_lpm$LPM_10
-importancia_lpm_41 <- resumen_importancia_lpm$LPM_41
+importancia_lpm_x5 <- resumen_importancia_lpm$LPM_X_5_extendido
 
 cat("Clasificaciones distintas en Test:",
-    sum(submissions_lpm$LPM_10$pobre != submissions_lpm$LPM_41$pobre), "\n")
-cat("\nTablas en memoria: importancia_lpm_10 e importancia_lpm_41.\n")
+    sum(submissions_lpm$LPM_10$pobre != submissions_lpm$LPM_X_5_extendido$pobre), "\n")
+cat("\nTablas en memoria: importancia_lpm_10 e importancia_lpm_x5.\n")
 
 # Limpiar entorno
 funciones <- ls(envir = .GlobalEnv)
@@ -245,5 +257,3 @@ rm(list = setdiff(funciones, conservar), envir = .GlobalEnv)
 rm(list = ls()[!sapply(mget(ls()), is.function)])
 
 cat("\nProceso terminado.\n")
-
-

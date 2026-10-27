@@ -1,2 +1,0 @@
-archivo,algoritmo,predictores,rondas,umbral,clase_positiva,alias_positivo,train_n,train_bogota_n,test_n,predichos_pobres,F1_OOF_historico,F1_reestimado_en_esta_ejecucion,segundos
-LGBM_hojas_31_lambda_10_alpha_01_iter_748_umbral_0375_replica_20261023_134853_1.csv,LightGBM,1296,748,0.375,1,Yes,164960,10567,66168,15076,0.768186986263071,FALSE,111.62

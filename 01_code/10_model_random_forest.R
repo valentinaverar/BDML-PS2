@@ -274,6 +274,20 @@ submission_rf <- fun_save_submission(
   .nombre = nombre_submission
 )
 
+# Registro con las predicciones fuera de muestra, para la comparación de
+# algoritmos.
+fun_registrar_oof(
+  .archivo = nombre_submission,
+  .algoritmo = "Random Forest",
+  .conjunto = "X_5_extendido",
+  .n_predictores = length(X),
+  .hiperparametros = paste0("árboles = ", num_arboles, "; mtry = ", mtry_rf,
+                            "; nodo mínimo = ", min_nodo),
+  .obs = train$Pobre,
+  .prob = prob_oof,
+  .umbral = umbral_final
+)
+
 
 # 9. RESULTADOS FINALES ------------------------------------
 

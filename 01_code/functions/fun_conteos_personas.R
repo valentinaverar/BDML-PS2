@@ -7,6 +7,7 @@
 # una sola variable. Requiere que el paquete tidyverse esté cargado.
 ##########################################################
 
+#integracion de la base de datos
 fun_conteos_personas <- function(.db) {
   #' Contar personas de la unidad de gasto por categoría
   #'
@@ -138,48 +139,3 @@ fun_conteos_personas <- function(.db) {
   
   return(db_result)
 }
-
-
-##########################################################
-# AMPLIACION LIGHTGBM - SOLO CODIGO ANADIDO
-# Se conserva integro todo el codigo anterior. Se amplia la MISMA funcion.
-# .ampliado=FALSE mantiene exactamente el comportamiento previo.
-# .ampliado=TRUE se usa exclusivamente desde 11_model_lightgbm.R.
-# Los auxiliares son locales; no se crean otras funciones publicas.
-##########################################################
-fun_conteos_personas <- local({
-  .original <- fun_conteos_personas
-  function(.db, .hogares = NULL, .ampliado = FALSE) {
-    if (!isTRUE(.ampliado)) return(.original(.db))
-    if (is.null(.hogares) || is.null(attr(.db, "lgbm_categorical_columns"))) {
-      stop("El modo ampliado requiere hogares y personas preparados en modo ampliado.")
-    }
-    h <- .hogares
-    p <- data.table::copy(data.table::as.data.table(.db))
-    p[, hh_idx := match(id, h$id)]
-    stopifnot(!anyNA(p$hh_idx))
-    nh <- nrow(h)
-    categoricas <- attr(.db, "lgbm_categorical_columns")
-    features <- list()
-    agregar <- function(nombre_col, valor) {
-      stopifnot(length(valor) == nh)
-      features[[nombre_col]] <<- valor
-    }
-    for (c in categoricas) {
-      valores <- p[[c]]
-      valores[is.na(valores)] <- -1
-      valores <- as.integer(valores)
-      # Orden de primera aparicion, igual que groupby(sort=False).unstack().
-      niveles <- unique(valores)
-      conteos <- data.table(hh_idx = p$hh_idx, nivel = valores)[, .(n = .N), by = .(hh_idx, nivel)]
-      for (nivel in niveles) {
-        cuenta <- numeric(nh)
-        seleccion <- which(conteos$nivel == nivel)
-        cuenta[conteos$hh_idx[seleccion]] <- conteos$n[seleccion]
-        agregar(paste0("category_", c, "_count_", nivel), cuenta)
-        agregar(paste0("category_", c, "_share_", nivel), cuenta / h$Nper)
-      }
-    }
-    data.table::as.data.table(c(list(id = h$id), features))
-  }
-})

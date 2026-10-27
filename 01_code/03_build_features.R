@@ -1,4 +1,3 @@
-####
 ##########################################################
 # 03_build_features.R
 #
@@ -13,7 +12,8 @@
 #   una variante con el conjunto común.
 #
 # Etapa del Problem Set: Etapa 1 y base de la Etapa 2.
-# Insumos:  03_temp/train_clean.rds y 03_temp/test_clean.rds.
+# Insumos:  03_temp/train_clean.rds, 03_temp/test_clean.rds y
+#           03_temp/train_X7.rds.
 # Salidas:  03_temp/predictores.rds.
 ##########################################################
 
@@ -80,12 +80,21 @@ X_5_extendido <- c(X_4_completo,
 X_6_detallado <- union(X_5_extendido,
                        setdiff(names(train), c("id", "Pobre")))
 
+# Bloque 7. Conjunto ampliado (fun_variables_lgbm.R): 1.296 variables que
+# describen en detalle el hogar y sus miembros. No está en train_clean.rds
+# sino en sus propias bases (03_temp/train_X7.rds y test_X7.rds), así que no
+# es una ampliación de X_6 y los modelos que lo usen deben leer esas bases.
+# Tiene valores faltantes (por ejemplo, la edad del cónyuge en hogares sin
+# cónyuge): solo sirve para algoritmos que los manejan, como el boosting.
+X_7_ampliado <- setdiff(names(readRDS("03_temp/train_X7.rds")), "id")
+
 predictores <- list(X_1_vivienda   = X_1_vivienda,
                     X_2_demografia = X_2_demografia,
                     X_3_empleo     = X_3_empleo,
                     X_4_completo   = X_4_completo,
                     X_5_extendido  = X_5_extendido,
-                    X_6_detallado  = X_6_detallado)
+                    X_6_detallado  = X_6_detallado,
+                    X_7_ampliado   = X_7_ampliado)
 
 # Verificaciones -----------------------------------------------------------
 # El conjunto más grande debe tener exactamente los predictores de las bases,
@@ -97,7 +106,9 @@ if (!setequal(X_6_detallado, setdiff(names(train), c("id", "Pobre"))) ||
   stop("X_6_detallado no coincide con los predictores de train y test.",
        call. = FALSE)
 }
-if (!all(unlist(predictores) %in% names(test))) {
+# X_7 vive en sus propias bases; las demás deben existir en test_clean.
+if (!all(unlist(predictores[names(predictores) != "X_7_ampliado"]) %in%
+         names(test))) {
   stop("Algún conjunto tiene variables que no están en las bases.",
        call. = FALSE)
 }
@@ -114,4 +125,4 @@ message("Conjuntos de predictores: ",
 saveRDS(predictores, "03_temp/predictores.rds")
 
 rm(train, test, X_1_vivienda, X_2_demografia, X_3_empleo, X_4_completo, X_5_extendido,
-   X_6_detallado, predictores)
+   X_6_detallado, X_7_ampliado, predictores)
