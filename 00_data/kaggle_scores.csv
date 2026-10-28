@@ -1,12 +1,23 @@
-archivo,algoritmo,puntaje_publico,fecha_envio,integrante,descripcion
-logit_X_4_completo_umbral_0_33,Logit,0.68,2026-10-17,Valentina Vera,Logit completo con 21 predictores; umbral 0.33 que maximiza F1 en CV
-logit_X_1_vivienda_umbral_0_25,Logit,0.53,2026-10-17,Valentina Vera,Logit con predictores de vivienda; umbral 0.25 que maximiza F1 en CV
-logit_X_2_demografia_umbral_0_26,Logit,0.56,2026-10-17,Valentina Vera,Logit con predictores demográficos; umbral 0.26 que maximiza F1 en CV
-logit_X_3_empleo_umbral_0_29,Logit,0.61,2026-10-17,Valentina Vera,Logit con predictores de empleo; umbral 0.29 que maximiza F1 en CV
-logit_X_5_extendido_umbral_0_33,Logit,0.71,2026-10-20,Valentina Vera,Logit con 43 predictores; umbral 0.33 que maximiza F1 en CV
-cart_X_5_extendido_sin_cp_0_000134_umbral_0_28,CART,0.67,2026-10-20,Valentina Vera,CART con 43 predictores; sin rebalanceo; cp 0.000134; umbral 0.28
-cart_X_5_extendido_up_cp_0_000052_umbral_0_75,CART,0.68,2026-10-20,Valentina Vera,CART con 43 predictores; upsampling; cp 0.000052; umbral 0.75
-XGB_X_6_detallado_depth_5_eta_010_mcw_5_rounds_516,Boosting (XGBoost),0.76,2026-10-22,Valentina Vera,XGBoost con X6 (148 predictores); depth 5; eta 0.10; mcw 5; 516 rondas; umbral 0.37 que maximiza F1 en CV
-LGBM_hojas_31_lambda_10_alpha_01_iter_748_umbral_0375,Boosting (LightGBM),0.77,2026-10-23,Andrés Silva,LightGBM con X7 (1296 predictores); umbral 0.375; envío previo reemplazado por LGBM_X_7_ampliado_hojas_31_iter_748_umbral_0_39
-LGBM_X_7_ampliado_hojas_31_iter_748_umbral_0_39,Boosting (LightGBM),0.77,2026-10-25,Valentina Vera,LightGBM con X7 (1296 predictores); 31 hojas; learning rate 0.04; 748 rondas; umbral 0.39 que maximiza F1 en CV
-XGB_X_7_ampliado_depth_5_eta_010_mcw_5_rounds_388,Boosting (XGBoost),0.76,2026-10-25,Valentina Vera,XGBoost con X7 (1296 predictores); depth 5; eta 0.10; mcw 5; 388 rondas; umbral 0.39 que maximiza F1 en CV
+archivo,algoritmo,puntaje_publico,puntaje_privado,fecha_envio,integrante,descripcion
+logit_X_4_completo_umbral_0_33,Logit,0.68,0.68,2026-10-17,Valentina Vera,Logit completo con 21 predictores; umbral 0.33 que maximiza F1 en CV
+logit_X_1_vivienda_umbral_0_25,Logit,0.53,0.52,2026-10-17,Valentina Vera,Logit con predictores de vivienda; umbral 0.25 que maximiza F1 en CV
+logit_X_2_demografia_umbral_0_26,Logit,0.56,0.56,2026-10-17,Valentina Vera,Logit con predictores demográficos; umbral 0.26 que maximiza F1 en CV
+logit_X_3_empleo_umbral_0_29,Logit,0.61,0.60,2026-10-17,Valentina Vera,Logit con predictores de empleo; umbral 0.29 que maximiza F1 en CV
+EN_lambda_00001_alpha_1A_029,Elastic Net,0.69,0.69,2026-10-18,Andrés Silva,Elastic Net con lambda 0.0001 y alpha 1 (variante A); umbral 0.29
+EN_lambda_00001_alpha_1B,Elastic Net,0.69,0.69,2026-10-18,Andrés Silva,Elastic Net con lambda 0.0001 y alpha 1 (variante B)
+EN_lambda_00001_alpha_05_u30,Elastic Net,0.69,0.69,2026-10-18,Andrés Silva,Elastic Net con lambda 0.0001 y alpha 0.5; umbral 0.30
+LPM_10_VARS_0.33_UMB,LPM,0.61,0.62,2026-10-19,Andrés Silva,LPM con 10 variables; umbral 0.33
+LPM_41_VARS_0.36_UMB,LPM,0.68,0.68,2026-10-19,Andrés Silva,LPM con 41 variables; umbral 0.36
+logit_X_5_extendido_umbral_0_33,Logit,0.71,0.71,2026-10-20,Valentina Vera,Logit con 43 predictores; umbral 0.33 que maximiza F1 en CV
+cart_X_5_extendido_sin_cp_0_000134_umbral_0_28,CART,0.67,0.68,2026-10-20,Valentina Vera,CART con 43 predictores; sin rebalanceo; cp 0.000134; umbral 0.28
+cart_X_5_extendido_up_cp_0_000052_umbral_0_75,CART,0.68,0.69,2026-10-20,Valentina Vera,CART con 43 predictores; upsampling; cp 0.000052; umbral 0.75
+XGB_depth_5_eta_010_mcw_5_rounds_352,Boosting (XGBoost),0.73,0.73,2026-10-22,Andrés Silva,XGBoost piloto con X5; depth 5; eta 0.10; mcw 5; 352 rondas
+RF_trees_300_mtry_6_node_10,Random Forest,0.70,0.70,2026-10-22,Andrés Silva,Random Forest con X5; 300 árboles; mtry 6; tamaño mínimo de nodo 10
+XGB_depth_6_eta_0p0203_mcw_8_rounds_1518_search250,Boosting (XGBoost),0.73,0.73,2026-10-22,Andrés Silva,XGBoost con búsqueda de 250 combinaciones; depth 6; eta 0.0203; mcw 8; 1518 rondas
+XGB_X_6_detallado_depth_5_eta_010_mcw_5_rounds_516,Boosting (XGBoost),0.76,0.76,2026-10-22,Valentina Vera,XGBoost con X6 (148 predictores); depth 5; eta 0.10; mcw 5; 516 rondas; umbral 0.37 que maximiza F1 en CV
+rf_X_5_extendido_mtry_31_node_20_trees_300_umbral_0_34,Random Forest,0.71,0.72,2026-10-23,Julián Herrera,Random Forest con X5; mtry 31; tamaño mínimo de nodo 20; 300 árboles; umbral 0.34
+nb_X_5_extendido_normal_laplace_5_umbral_0_88,Naive Bayes,0.64,0.65,2026-10-23,Julián Herrera,Naive Bayes con X5; distribución normal; suavizado de Laplace 5; umbral 0.88
+adaboost_X_5_extendido_mfinal_100_depth_5_umbral_0_46,AdaBoost,0.71,0.71,2026-10-23,Julián Herrera,AdaBoost con X5; 100 iteraciones; profundidad 5; umbral 0.46
+LGBM_hojas_31_lambda_10_alpha_01_iter_748_umbral_0375,Boosting (LightGBM),0.77,0.77,2026-10-23,Andrés Silva,LightGBM con X7 (1296 predictores); umbral 0.375; envío previo reemplazado por LGBM_X_7_ampliado_hojas_31_iter_748_umbral_0_39
+LGBM_X_7_ampliado_hojas_31_iter_748_umbral_0_39,Boosting (LightGBM),0.77,0.77,2026-10-25,Valentina Vera,LightGBM con X7 (1296 predictores); 31 hojas; learning rate 0.04; 748 rondas; umbral 0.39 que maximiza F1 en CV
+XGB_X_7_ampliado_depth_5_eta_010_mcw_5_rounds_388,Boosting (XGBoost),0.76,0.77,2026-10-25,Valentina Vera,XGBoost con X7 (1296 predictores); depth 5; eta 0.10; mcw 5; 388 rondas; umbral 0.39 que maximiza F1 en CV
