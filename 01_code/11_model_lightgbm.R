@@ -25,7 +25,7 @@
 
 # Preparación -------------------------------------------------------------
 if (!require(pacman)) install.packages("pacman")
-pacman::p_load(data.table, tidyverse, caret, pROC, lightgbm)
+pacman::p_load(data.table, tidyverse, caret, pROC, lightgbm, knitr)
 
 source("01_code/functions/fun_metricas.R")
 source("01_code/functions/fun_save_submission.R")
@@ -204,6 +204,95 @@ fun_lgbm_variante <- function(.nombre_conjunto) {
   
   invisible(list(umbral = umbral, comparacion = comparacion, archivo = archivo))
 }
+
+# Búsqueda de hiperparámetros --------------------------------------------------
+# Grilla con validación cruzada, sobre el conjunto común X_5_extendido
+# (43 variables), donde cada configuración tarda menos de un minuto. Se varían
+# los tres hiperparámetros que más controlan la complejidad del modelo:
+#   - num_leaves: hojas por árbol (15, 31, 63 y 127). Más hojas permiten
+#     interacciones más complejas, con más riesgo de sobreajuste.
+#   - learning_rate: cuánto aporta cada árbol (0,02, 0,04 y 0,1). Con una tasa
+#     menor se usan más rondas, para que el aprendizaje total sea parecido
+#     (0,02 x 1.496, 0,04 x 748 y 0,1 x 300 rondas).
+#   - min_data_in_leaf: hogares mínimos por hoja (20, 100 y 300). Más
+#     hogares por hoja hacen el modelo más simple y estable.
+# Son 4 x 3 x 3 = 36 combinaciones, entre ellas la configuración elegida.
+# Los demás hiperparámetros quedan como en la configuración elegida. Para cada
+# combinación se usan las mismas particiones de los demás modelos, se elige el
+# umbral que maximiza el F1 con las predicciones fuera de muestra y se guarda
+# el F1. La búsqueda no genera envíos a Kaggle ni entra al registro de
+# modelos: documenta si la configuración elegida está cerca de la mejor.
+# Con FALSE se lee la tabla guardada en vez de volver a correr la búsqueda.
+BUSCAR_HIPERPARAMETROS <- TRUE
+ruta_busqueda <- "02_outputs/tables/busqueda_lgbm.csv"
+
+if (BUSCAR_HIPERPARAMETROS || !file.exists(ruta_busqueda)) {
+  x_busqueda <- fun_matriz_lgbm("X_5_extendido", "train")$x
+  stopifnot(nrow(x_busqueda) == length(y))
+  grilla <- expand.grid(hojas = c(15L, 31L, 63L, 127L),
+                        tasa = c(0.02, 0.04, 0.1),
+                        min_hoja = c(20L, 100L, 300L)) |>
+    mutate(rondas = case_when(tasa == 0.02 ~ 1496L,
+                              tasa == 0.04 ~ 748L,
+                              TRUE ~ 300L))
+  
+  busqueda <- map_dfr(seq_len(nrow(grilla)), function(i) {
+    inicio <- Sys.time()
+    params_i <- modifyList(parametros,
+                           list(num_leaves = grilla$hojas[i],
+                                learning_rate = grilla$tasa[i],
+                                min_data_in_leaf = grilla$min_hoja[i]))
+    prob_i <- rep(NA_real_, nrow(x_busqueda))
+    for (k in seq_along(cv_folds)) {
+      idx_train <- cv_folds[[k]]
+      idx_valid <- setdiff(seq_len(nrow(x_busqueda)), idx_train)
+      datos_k <- lgb.Dataset(x_busqueda[idx_train, , drop = FALSE],
+                             label = y[idx_train], params = params_i,
+                             free_raw_data = TRUE)
+      modelo_k <- lgb.train(params = params_i, data = datos_k,
+                            nrounds = grilla$rondas[i], verbose = -1L)
+      prob_i[idx_valid] <- as.numeric(predict(modelo_k,
+                                              x_busqueda[idx_valid, , drop = FALSE]))
+      rm(datos_k, modelo_k); gc(verbose = FALSE)
+    }
+    res_i <- fun_umbral_f1(obs, prob_i)
+    met_i <- fun_metricas_umbral(obs, prob_i, res_i$umbral)
+    message(i, "/", nrow(grilla), ". Hojas ", grilla$hojas[i], ", tasa ",
+            grilla$tasa[i], ", mínimo por hoja ", grilla$min_hoja[i], ": F1 ",
+            round(met_i$F1, 4), " (",
+            round(as.numeric(difftime(Sys.time(), inicio, units = "mins")), 1),
+            " minutos).")
+    tibble(hojas = grilla$hojas[i], tasa = grilla$tasa[i],
+           min_hoja = grilla$min_hoja[i], rondas = grilla$rondas[i], umbral = res_i$umbral,
+           precision = met_i$precision, recall = met_i$recall, f1 = met_i$F1)
+  })
+  rm(x_busqueda); gc()
+  write.csv(busqueda, ruta_busqueda, row.names = FALSE)
+} else {
+  busqueda <- read.csv(ruta_busqueda)
+}
+
+# Tabla para las slides: las 8 mejores combinaciones y, si no está entre
+# ellas, la elegida, con su posición entre las 36.
+busqueda <- busqueda |>
+  arrange(desc(f1)) |>
+  mutate(posicion = row_number(),
+         elegida = hojas == 31 & tasa == 0.04 & min_hoja == 100)
+tabla_busqueda <- busqueda |>
+  filter(posicion <= 8 | elegida) |>
+  transmute(`Posición` = posicion,
+            Hojas = hojas,
+            `Tasa` = formatC(tasa, format = "f", digits = 2, decimal.mark = ","),
+            `Mínimo por hoja` = min_hoja,
+            Rondas = format(rondas, big.mark = "."),
+            F1 = formatC(f1, format = "f", digits = 4, decimal.mark = ","),
+            ` ` = if_else(elegida, "Elegida", ""))
+writeLines(knitr::kable(tabla_busqueda, format = "latex", booktabs = TRUE,
+                        linesep = "", align = c("r", "r", "r", "r", "r", "r", "l")),
+           "02_outputs/tables/busqueda_lgbm.tex")
+message("F1 de las 36 combinaciones: entre ",
+        round(min(busqueda$f1), 4), " y ", round(max(busqueda$f1), 4), ".")
+print(busqueda |> arrange(desc(f1)))
 
 # Variantes ---------------------------------------------------------------------
 # Mejor modelo: conjunto ampliado X_7.
