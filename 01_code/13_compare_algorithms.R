@@ -19,7 +19,8 @@
 # Kaggle: todas las variantes se evaluaron con los mismos hogares (03_temp/
 # cv_folds.rds), mientras que en Kaggle no se subieron todas.
 #
-#   0. Datos: la línea base y por qué los árboles deberían ganar.
+#   0. Datos: la línea base, los conjuntos de predictores y por qué los
+#      árboles deberían ganar.
 #   1. Resumen de los siete algoritmos requeridos y, con las mismas
 #      variables (X_5_extendido), el efecto del algoritmo.
 #   2. Mismo algoritmo, más variables (X_5, X_6 y X_7): efecto de las
@@ -27,8 +28,8 @@
 #   3. Ajuste de hiperparámetros y rebalanceo de clases, con el algoritmo y
 #      las variables fijos.
 #   3b. Comparación a fondo del boosting con sus dos rivales más cercanos
-#       (Random Forest y Elastic Net): umbral, errores, grupos de hogares y
-#       variables más importantes.
+#       (Random Forest y Elastic Net): umbral, errores, leakage a igual
+#       cobertura y variables más importantes.
 #   4. Respaldo: el F1 de validación cruzada frente al puntaje de Kaggle.
 ##########################################################
 
@@ -113,6 +114,42 @@ linea_base <- tibble(
 writeLines(kable(linea_base, format = "latex", booktabs = TRUE, linesep = "",
                  align = c("l", "r")),
            "02_outputs/tables/linea_base.tex")
+
+# Conjuntos de predictores. Cada uno agrega un bloque al anterior, de lo más
+# fácil de observar en una visita al hogar a lo más detallado (X_7 se arma
+# aparte y no contiene a X_6). Para cada conjunto: número de variables y
+# algoritmos evaluados con él en validación cruzada.
+predictores <- readRDS("03_temp/predictores.rds")
+contenido_conjuntos <- c(
+  X_1_vivienda   = "Ubicación, tenencia de la vivienda, tamaño y hacinamiento",
+  X_2_demografia = "+ composición del hogar, dependencia y educación",
+  X_3_empleo     = "+ ocupados e inactivos",
+  X_4_completo   = "+ horas, cotización, pensión y posición ocupacional",
+  X_5_extendido  = "+ arriendo, desempleo, salud, subempleo y transferencias",
+  X_6_detallado  = "+ miembros por categoría de educación, ocupación y empresa",
+  X_7_ampliado   = "Detalle del hogar y de cada miembro (con datos faltantes)")
+algoritmos_conjunto <- variantes |>
+  filter(conjunto %in% names(contenido_conjuntos)) |>
+  mutate(algoritmo_base = if_else(startsWith(algoritmo_corto, "Random Forest"),
+                                  "Random Forest", algoritmo_corto)) |>
+  group_by(conjunto) |>
+  summarize(n = n_distinct(algoritmo_base),
+            algoritmos = if_else(n > 3, paste0("Los ", n, " algoritmos"),
+                                 paste(sort(unique(algoritmo_base)),
+                                       collapse = ", ")),
+            .groups = "drop")
+conjuntos <- tibble(conjunto = names(contenido_conjuntos),
+                    contenido = contenido_conjuntos,
+                    variables = lengths(predictores[names(contenido_conjuntos)])) |>
+  left_join(algoritmos_conjunto, by = "conjunto")
+writeLines(kable(conjuntos |>
+                   transmute(Conjunto = sub("^(X_[0-9]).*", "\\1", conjunto),
+                             Contenido = contenido,
+                             Variables = format(variables, big.mark = ".", decimal.mark = ","),
+                             `Algoritmos evaluados` = algoritmos),
+                 format = "latex", booktabs = TRUE, linesep = "",
+                 align = c("l", "l", "r", "l")),
+           "02_outputs/tables/conjuntos_predictores.tex")
 
 # Interacción: el efecto de un ocupado más depende del tamaño del hogar.
 # Un modelo lineal en estas dos variables suma efectos que no cambian entre
@@ -219,12 +256,9 @@ writeLines(kable(resumen_algoritmos |>
                    transmute(Algoritmo = categoria,
                              `Variantes evaluadas` = variantes,
                              `Mejor F1 CV` = fun_coma(f1_cv),
-                             Conjunto = conjunto,
-                             `Kaggle (misma variante)` =
-                               if_else(is.na(kaggle), "No se envió",
-                                       fun_coma(kaggle, 2))),
+                             `Kaggle (misma variante)` = fun_coma(kaggle, 2)),
                  format = "latex", booktabs = TRUE, linesep = "",
-                 align = c("l", "r", "r", "l", "r")),
+                 align = c("l", "r", "r", "r")),
            "02_outputs/tables/resumen_algoritmos.tex")
 
 # 1b. Mismas variables, distintos algoritmos -------------------------------------
@@ -462,50 +496,57 @@ writeLines(kable(errores_top3, format = "latex", booktabs = TRUE, linesep = "",
            "02_outputs/tables/errores_top3.tex")
 print(errores_top3)
 
-# (c) Dónde gana: F1 de cada modelo por zona y por tamaño del hogar.
-subgrupos <- train |>
-  transmute(Zona = case_when(cat_ubicacion == "RURAL" ~ "Rural",
-                             cat_ubicacion == "RESTO URBANO" ~ "Resto urbano",
-                             TRUE ~ "Ciudades"),
-            tamano = cut(num_personas_ug, c(0, 2, 4, Inf),
-                         labels = c("1 a 2 personas", "3 a 4 personas",
-                                    "5 o más personas"))) |>
-  bind_cols(prob_top3) |>
-  mutate(pobre = pobre)
-f1_subgrupos <- bind_rows(
-  subgrupos |> mutate(grupo = Zona, dimension = "Zona"),
-  subgrupos |> mutate(grupo = as.character(tamano), dimension = "Tamaño del hogar")
-) |>
-  pivot_longer(all_of(names(colores_top3)), names_to = "modelo",
-               values_to = "prob") |>
-  group_by(dimension, grupo, modelo) |>
-  summarize(F1 = fun_f1(pobre, prob >= umbrales_top3[modelo[1]]),
-            .groups = "drop") |>
-  mutate(modelo = factor(modelo, levels = names(colores_top3)),
-         grupo = factor(grupo, levels = rev(c("Ciudades", "Resto urbano", "Rural",
-                                              "1 a 2 personas", "3 a 4 personas",
-                                              "5 o más personas"))))
+# (c) Leakage a igual cobertura: para cada modelo, cuántos hogares no pobres
+# quedarían incluidos (falsos positivos, leakage) para encontrar una misma
+# proporción de los hogares pobres (recall). Cada punto de una curva es un
+# umbral: se ordenan los hogares de mayor a menor probabilidad y se van
+# incluyendo uno a uno. Una curva más baja es mejor en todo el rango.
+n_pobres <- sum(pobre)
+curvas_leakage <- map_dfr(names(colores_top3), function(.m) {
+  orden <- order(prob_top3[[.m]], decreasing = TRUE)
+  tp <- cumsum(pobre[orden])
+  fp <- cumsum(!pobre[orden])
+  tibble(modelo = .m, recall = tp / n_pobres, falsos_positivos = fp) |>
+    filter(recall >= 0.5, recall <= 0.95) |>
+    # Un punto por cada 0,5% de recall, para que el archivo no pese tanto.
+    group_by(paso = round(recall / 0.005)) |>
+    slice_tail(n = 1) |>
+    ungroup()
+}) |>
+  mutate(modelo = factor(modelo, levels = names(colores_top3)))
+puntos_leakage <- map_dfr(names(colores_top3), function(.m) {
+  pred <- prob_top3[[.m]] >= umbrales_top3[[.m]]
+  tibble(modelo = .m, recall = sum(pobre & pred) / n_pobres,
+         falsos_positivos = sum(!pobre & pred))
+}) |>
+  mutate(modelo = factor(modelo, levels = names(colores_top3)))
 
-grafico_subgrupos <- f1_subgrupos |>
-  ggplot(aes(x = F1, y = grupo, color = modelo)) +
-  geom_line(aes(group = grupo), color = "#d6d5cf", linewidth = 1) +
-  geom_point(size = 3.4) +
-  facet_grid(dimension ~ ., scales = "free_y", space = "free_y",
-             switch = "y") +
+# Diferencia de leakage frente a Elastic Net con el 80% de los pobres
+# encontrados, para el texto de las slides.
+leakage_80 <- curvas_leakage |>
+  group_by(modelo) |>
+  slice_min(abs(recall - 0.8), n = 1, with_ties = FALSE) |>
+  ungroup()
+print(leakage_80)
+
+grafico_leakage <- curvas_leakage |>
+  ggplot(aes(x = recall, y = falsos_positivos / 1000, color = modelo)) +
+  geom_line(linewidth = 0.8) +
+  geom_point(data = puntos_leakage, size = 3.2) +
   scale_color_manual(values = colores_top3, name = NULL) +
-  scale_x_continuous(labels = function(x) fun_coma(x, 2)) +
-  labs(title = "La ventaja del boosting es mayor en hogares pequeños y rurales",
-       subtitle = "F1 de validación cruzada por grupo de hogares, con X_5_extendido",
-       x = "F1 de validación cruzada", y = NULL,
-       caption = "Cada modelo con su umbral elegido en validación cruzada.") +
+  scale_x_continuous(labels = function(x) paste0(round(100 * x), "%"),
+                     breaks = seq(0.5, 0.95, by = 0.05)) +
+  scale_y_continuous(labels = function(x) fun_coma(x, 0)) +
+  labs(title = "Con la misma cobertura, el boosting incluye menos hogares no pobres",
+       subtitle = "Hogares no pobres incluidos (leakage) según la proporción de pobres encontrados (recall)",
+       x = "Hogares pobres encontrados (recall)",
+       y = "Hogares no pobres incluidos (miles)",
+       caption = "Validación cruzada con X_5_extendido; el punto marca el umbral elegido de cada modelo.") +
   tema +
-  theme(legend.position = "top", legend.justification = "left",
+  theme(legend.position = "top",
         legend.text = element_text(color = texto_2),
-        strip.placement = "outside",
-        strip.text.y.left = element_text(angle = 0, hjust = 1, color = texto_2,
-                                         face = "bold", size = 9),
-        panel.grid.major.x = element_line(color = "#eeede8"))
-ggsave("02_outputs/figures/f1_subgrupos_top3.pdf", grafico_subgrupos,
+        panel.grid.major.y = element_line(color = "#eeede8"))
+ggsave("02_outputs/figures/leakage_recall_top3.pdf", grafico_leakage,
        width = 7, height = 4.4)
 
 # (d) Qué variables usa cada modelo: las 8 más importantes, en escala de 0 a
@@ -527,6 +568,10 @@ importancias <- bind_rows(
   group_by(modelo) |>
   mutate(importancia = 100 * valor / max(valor)) |>
   slice_max(importancia, n = 8, with_ties = FALSE) |>
+  ungroup() |>
+  # Variables que están entre las 8 más importantes de los tres modelos.
+  group_by(variable) |>
+  mutate(comun = n_distinct(modelo) == length(colores_top3)) |>
   ungroup() |>
   mutate(modelo = factor(modelo, levels = names(colores_top3)),
          # Nombre único por panel, para ordenar las barras dentro de cada uno.
@@ -559,19 +604,26 @@ fun_nombre <- function(.x) {
   base <- sub("___.*$", "", .x)
   if_else(base %in% names(nombres_variables), nombres_variables[base], base)
 }
+message("Variables entre las 8 más importantes de los tres modelos: ",
+        paste(unique(fun_nombre(importancias$variable[importancias$comun])),
+              collapse = ", "), ".")
 
 grafico_importancia <- importancias |>
   mutate(variable = fct_reorder(variable, importancia)) |>
-  ggplot(aes(x = importancia, y = variable, fill = modelo)) +
+  ggplot(aes(x = importancia, y = variable, fill = modelo,
+             alpha = comun)) +
   geom_col(width = 0.7) +
+  # Color intenso: variable común a los tres modelos; claro: propia del modelo.
+  scale_alpha_manual(values = c("TRUE" = 1, "FALSE" = 0.35), guide = "none") +
   facet_wrap(~ modelo, scales = "free_y", ncol = 3) +
   scale_y_discrete(labels = fun_nombre) +
   scale_fill_manual(values = colores_top3) +
   scale_x_continuous(breaks = c(0, 50, 100)) +
-  labs(title = "Los tres modelos usan la misma información, con otro peso",
+  labs(title = "Los tres modelos se apoyan en buena parte en las mismas variables",
        subtitle = "Las 8 variables más importantes de cada modelo (100 = la más importante)",
        x = "Importancia relativa", y = NULL,
-       caption = paste("LightGBM: ganancia. Random Forest: permutación.",
+       caption = paste("Color intenso: entre las 8 más importantes de los tres modelos.\n",
+                       "LightGBM: ganancia. Random Forest: permutación.",
                        "Elastic Net: |coeficiente| × desviación estándar.")) +
   tema +
   theme(strip.text = element_text(color = texto_1, face = "bold"),
