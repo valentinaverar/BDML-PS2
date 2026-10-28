@@ -206,29 +206,29 @@ No se identifican pobres pero se consigue accuracy del 80\%{} aprox.
 
 %%%% 1296 predictores
 
-\begin{frame}{Cómo se describe cada hogar}
-\small
+\begin{frame}{Caracterización de los predictores}
+\footnotesize
 
 \begin{columns}[T,onlytextwidth]
 
 \begin{column}{0.47\textwidth}
 \textbf{Dimensiones económicas}
+\smallskip
 
 \begin{itemize}
-\setlength{\itemsep}{0.4em}
+\setlength{\itemsep}{0.35em}
 
 \item \textbf{Vivienda:}
-arriendo pagado o estimado, tenencia y hacinamiento.
+arriendo, tenencia y hacinamiento.
 
 \item \textbf{Trabajo y protección:}
-ocupación, formalidad aproximada, cotización,
-salud y prestaciones.
+ocupación, formalidad, salud y prestaciones.
 
-\item \textbf{Capital humano y composición:}
-educación, edades, menores y adultos mayores.
+\item \textbf{Capital humano:}
+educación y composición por edades.
 
 \item \textbf{Otros recursos:}
-presencia de pensiones, rentas y transferencias.
+pensiones, rentas y transferencias.
 
 \item \textbf{Territorio:}
 ciudad, zona y departamento.
@@ -237,26 +237,24 @@ ciudad, zona y departamento.
 \end{column}
 
 \begin{column}{0.49\textwidth}
-\textbf{Formas de representar esa información}
+\textbf{Construcción de predictores}
+\smallskip
 
 \begin{itemize}
-\setlength{\itemsep}{0.4em}
+\setlength{\itemsep}{0.35em}
 
 \item \textbf{Composición:}
-cuántos miembros trabajan o cotizan
-y qué proporción del hogar representan.
+conteos y proporciones de miembros.
 
-\item \textbf{Distribución interna:}
-promedios, máximos, mínimos, dispersión y sumas.
-Por ejemplo, educación máxima de los ocupados.
+\item \textbf{Agregados:}
+medias, máximos, mínimos, sumas y dispersión.
 
-\item \textbf{Recursos frente a necesidades:}
-personas por cuarto, miembros por ocupado formal
-y arriendo ajustado por tamaño del hogar.
+\item \textbf{Indicadores relativos:}
+personas por cuarto, miembros por ocupado
+y arriendo por miembro.
 
 \item \textbf{Perfiles individuales:}
-características del jefe, cónyuge
-y tres miembros de mayor edad.
+jefe, cónyuge y tres miembros de mayor edad.
 
 \end{itemize}
 \end{column}
@@ -264,15 +262,16 @@ y tres miembros de mayor edad.
 \end{columns}
 
 \medskip
-\footnotesize
+\hrule
+\smallskip
 
-Los agregados distinguen cuatro grupos:
-\textbf{hogar completo, unidad de gasto, adultos y ocupados}.
+\textbf{Grupos de agregación:}
+hogar, unidad de gasto, adultos y ocupados.
 
 \smallskip
-Una misma respuesta genera varias medidas:
-por ejemplo, la educación del jefe, la educación media
-del hogar y la educación máxima de sus ocupados.
+\textit{Ejemplo:} una respuesta sobre educación permite
+construir la educación del jefe, el promedio del hogar
+y el máximo de los ocupados.
 
 \end{frame}
 
