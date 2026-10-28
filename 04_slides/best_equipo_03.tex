@@ -425,6 +425,29 @@
   \end{columns}
 \end{frame}
 
+\begin{frame}{La encuesta corta: qu\'e se pierde y qu\'e se gana}
+  \vspace{2mm}
+  \centering
+  {\footnotesize \input{../02_outputs/tables/comparacion_x5_x7.tex}}
+  \vspace{6mm}
+  \begin{columns}[T, onlytextwidth]
+    \begin{column}{0.48\textwidth}
+      \footnotesize
+      \begin{itemize}
+        \item \textbf{Se pierde precisi\'on:} la lista crece en 5.821 hogares, de los cuales 4.969 no son pobres; la precisi\'on baja de 74,4\% a 65,9\%.
+        \item La cobertura no se pierde: X\_5 encuentra 852 pobres m\'as (recall de 82,0\% frente a 79,4\%).
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \footnotesize
+      \begin{itemize}
+        \item \textbf{Se gana una encuesta f\'acil de recoger:} 43 variables en lugar de 1.296, verificables en una visita.
+        \item El modelo sigue siendo bueno: F1 de 0,73, mejor que cualquier otro algoritmo con esas variables.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
 % ============================================================
 \appendix
 

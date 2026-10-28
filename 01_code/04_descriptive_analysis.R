@@ -16,7 +16,7 @@ ruta_importancia <- "02_outputs/artifacts/importancia_permutacion_lgbm.rds"
 
 # Paquetes y datos ---------------------------------------------------------
 if (!require(pacman)) install.packages("pacman")
-pacman::p_load(tidyverse, scales,gridExtra,lgbm)
+pacman::p_load(tidyverse, scales, gridExtra)
 
 train <- readRDS("03_temp/train_clean.rds")
 test <- readRDS("03_temp/test_clean.rds")

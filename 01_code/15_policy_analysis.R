@@ -191,4 +191,40 @@ grafico_encuesta <- escalera |>
 ggsave("02_outputs/figures/f1_tamano_encuesta.pdf", grafico_encuesta,
        width = 7, height = 4.4)
 
+# 4. Qué se pierde con la encuesta corta -----------------------------------
+# Matriz de confusión de LightGBM con X_5 (43 variables) frente a X_7 (1.296),
+# cada uno con su propio umbral que maximiza el F1.
+lgbm_x5 <- registro |>
+  filter(algoritmo == "Boosting (LightGBM)", conjunto == "X_5_extendido")
+resultado_x5 <- readRDS(file.path("03_temp", paste0(lgbm_x5$archivo, ".rds")))
+oof_x5 <- resultado_x5$oof |> arrange(rowIndex)
+stopifnot(all(oof_x5$obs == oof$obs))
+
+fun_conteos <- function(.prob, .u) {
+  sel <- .prob >= .u
+  tp <- sum(pobre & sel); fp <- sum(!pobre & sel); fn <- sum(pobre & !sel)
+  c(tp = tp, fn = fn, fp = fp, lista = tp + fp,
+    precision = tp / (tp + fp), recall = tp / (tp + fn),
+    f1 = 2 * tp / (2 * tp + fp + fn))
+}
+conteos <- list(x7 = fun_conteos(prob, umbral),
+                x5 = fun_conteos(oof_x5$Yes, resultado_x5$umbral))
+fila <- function(.nombre, .campo, .formato) {
+  tibble(` ` = .nombre,
+         `X\\_7 (1.296 variables)` = .formato(conteos$x7[[.campo]]),
+         `X\\_5 (43 variables)` = .formato(conteos$x5[[.campo]]))
+}
+comparacion_encuesta <- bind_rows(
+  fila("Pobres encontrados", "tp", fun_entero),
+  fila("Pobres por fuera (undercoverage)", "fn", fun_entero),
+  fila("No pobres en la lista (leakage)", "fp", fun_entero),
+  fila("Hogares en la lista", "lista", fun_entero),
+  fila("Precisión", "precision", fun_pct),
+  fila("Recall", "recall", fun_pct),
+  fila("F1", "f1", fun_coma))
+writeLines(kable(comparacion_encuesta, format = "latex", booktabs = TRUE,
+                 linesep = "", align = c("l", "r", "r"), escape = FALSE),
+           "02_outputs/tables/comparacion_x5_x7.tex")
+print(comparacion_encuesta)
+
 message("Figuras y tablas de política en 02_outputs/.")
