@@ -1,0 +1,541 @@
+% Best Model Deep Dive, Equipo 03.
+% Diseño: mismo tema Madrid y proporción 4:3 de slides.tex.
+\documentclass{beamer}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-nodecimaldot,shorthands=off]{babel}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usetheme{Madrid}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+\graphicspath{{figures/}{../02_outputs/figures/}}
+\input{best_datos.tex}
+\title[Predicción de pobreza]{Predicción de pobreza en Colombia}
+\subtitle{Best Model Deep Dive}
+\author[Equipo 03]{Andrés Silva, Valentina Vera \& Julián Herrera}
+\institute[Uniandes]{Universidad de los Andes}
+\date[2026-20]{MECA 4107, 2026-20}
+\newcommand{\fuente}[1]{\vfill{\fontsize{6.5}{7.5}\selectfont\color{black!65}#1\par}}
+\newcommand{\cierre}[1]{\begin{block}{}\centering\small #1\end{block}}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.18}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\begin{document}
+
+% 01. Portada.
+\begin{frame}
+\titlepage
+\end{frame}
+
+% 02. Contenido de la presentación.
+\begin{frame}{Contenido}
+\small
+\begin{enumerate}
+
+\setlength{\itemsep}{1.0em}
+
+\item Descripción del modelo ganador
+
+\item Caracterización del problema
+\begin{itemize}
+  \item ¿Qué datos tenemos?
+  \item Retos para la predicción.
+\end{itemize}
+
+\item Construcción del modelo
+\begin{itemize}
+  \item Proceso de elección.
+  \item Resultados
+  \item ¿Por qué funcionó?.
+\end{itemize}
+
+\item \textbf{Variable importance}
+\item Implicaciones de política pública
+
+
+\end{enumerate}
+\end{frame}
+
+% 03. Overview obligatorio.
+\begin{frame}{El modelo ganador}
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.40\textwidth}
+\begin{block}{F1 público en Kaggle}
+\centering
+{\fontsize{34}{36}\selectfont\PublicScore}\par
+\smallskip
+{\small F1 en CV: \textbf{\FoneCV}}
+\end{block}
+\end{column}
+
+\begin{column}{0.56\textwidth}
+\textbf{Especificación del modelo}
+\medskip
+\small
+\begin{itemize}
+\setlength{\itemsep}{0.4em}
+\item \textbf{Predictores:} 1.296 variables
+\item \textbf{Complejidad:} 31 hojas y 748 rondas
+\item \textbf{Learning rate:} 0,04
+\item \textbf{Validación:} 5 folds estratificados
+\item \textbf{Umbral óptimo:} \UmbralBest
+\end{itemize}
+\end{column}
+
+\end{columns}
+
+\vfill
+\fuente{Equipo 03. Fuentes: registro de modelos y puntajes públicos de Kaggle.}
+
+\note{El puntaje público corresponde al envío del 25 de octubre de 2026. F1 CV: 0,768403942. Umbral: 0,393939393939394.}
+
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%% CARACTERIZACIÓN DEL PROBLEMA:
+\begin{frame}[plain]
+\vfill
+\begin{center}
+{\usebeamercolor[fg]{structure}\fontsize{48}{52}\selectfont\bfseries --}\par
+\vspace{0.5cm}
+{\usebeamercolor[fg]{structure}\rule{0.65\textwidth}{1.5pt}}\par
+\vspace{0.5cm}
+{\LARGE\bfseries Caracterización del problema}\par
+\vspace{0.35cm}
+{\normalsize\color{black!65}Datos, desbalance y ausencia de Bogotá en test}\par
+\end{center}
+\vfill
+\end{frame}
+
+
+
+% 04 Caracterizacion del problema
+
+\begin{frame}{¿Qué datos tenemos?}
+\small
+\begin{itemize}
+\setlength{\itemsep}{1em}
+
+\item 4 bases de datos. una para hogar, otra de personas para entrenamiento y para evaluación
+
+\item 231.128 hogares.
+\begin{itemize}
+    \item Train: 164.960 hogares.
+    \item Test: 66.168 hogares.
+\end{itemize}
+
+\item Train incluye Bogotá, mientras que test no.
+
+\item Predictores disponibles
+\begin{itemize}
+    \item Train: 148.
+    \item Test: 79.
+\end{itemize}
+
+\end{itemize}
+\end{frame}
+
+
+% 05. Selección original por mayor cambio al excluir Bogotá.
+\begin{frame}{Caracterización: Bogotá}
+\begin{columns}[c,onlytextwidth]
+\begin{column}{0.60\textwidth}
+\includegraphics[width=\linewidth]{best_balance_original.pdf}
+\end{column}
+\begin{column}{0.36\textwidth}
+\small
+\begin{itemize}
+\setlength{\itemsep}{0.8em}
+\item Bogotá compone el \textbf{\PorcBogota} del conjunto de entrenamiento y no aparece en el de testeo.
+\item Ninguna variable muestra una diferencia importante respecto al test, aunque son estadísticamente existentes.
+\item Excluirla acerca varias medias; no garantiza mejor predicción (se verá más adelante).
+\end{itemize}
+\end{column}
+\end{columns}
+\fuente{Comparación original del script 04: 15 variables con mayor cambio en el valor absoluto del SMD al excluir Bogotá. Diferencia estandarizada train -- test e IC del 95\%.}
+\note{No es una comparación directa Bogotá contra resto. Cada fila compara train con test, incluyendo o excluyendo Bogotá en train. La selección replica el cambio en el SMD absoluto; no es el ranking de importancia. El balance marginal no demuestra invariancia de la relación entre predictores y pobreza.}
+\end{frame}
+
+
+% 06. Asignar a todos a No pobre.
+\begin{frame}{Caracterización: desbalance}
+\begin{columns}[c,onlytextwidth]
+\begin{column}{0.50\textwidth}
+\includegraphics[width=\linewidth]{best_distribucion_clase.pdf}
+\centering{\footnotesize Train: \NTrain{} hogares}
+\end{column}
+\begin{column}{0.45\textwidth}
+\small
+\textbf{Clasificador ingenuo: nadie es pobre}
+\medskip
+
+\begin{tabular}{@{}lr@{}}
+\toprule
+Accuracy & \AccBase\\
+\textbf{F1} & \textbf{\FoneBase}\\
+Sensibilidad & \SensBase\\
+Especificidad & \EspBase\\
+\bottomrule
+\end{tabular}
+\medskip
+
+No se identifican pobres pero se consigue accuracy del 80\%{} aprox.
+\end{column}
+\end{columns}
+\fuente{Distribución de Pobre en train. Clase positiva: hogar pobre. Métricas de asignar a todos a No pobre, sin entrenar un modelo.}
+\note{El 20,0194 por ciento es pobre. Asignar todos a no pobres produce 131.936 TN y 33.024 FN. F1 y sensibilidad son cero; exactitud: 79,9806 por ciento. No se muestra precisión positiva porque no hay predicciones positivas.}
+\end{frame}
+
+%%%%%%%%%%%%%%%%%%%%%% ELECCIÓN DEL MODELO
+\begin{frame}[plain]
+\vfill
+\begin{center}
+{\usebeamercolor[fg]{structure}\fontsize{48}{52}\selectfont\bfseries --}\par
+\vspace{0.5cm}
+{\usebeamercolor[fg]{structure}\rule{0.65\textwidth}{1.5pt}}\par
+\vspace{0.5cm}
+{\LARGE\bfseries Elección del modelo}\par
+\vspace{0.35cm}
+{\normalsize\color{black!65}Entrenamiento, validación y optimización}\par
+\end{center}
+\vfill
+\end{frame}
+
+%%%% 1296 predictores
+
+\begin{frame}{Cómo se describe cada hogar}
+\small
+
+\begin{columns}[T,onlytextwidth]
+
+\begin{column}{0.47\textwidth}
+\textbf{Dimensiones económicas}
+
+\begin{itemize}
+\setlength{\itemsep}{0.4em}
+
+\item \textbf{Vivienda:}
+arriendo pagado o estimado, tenencia y hacinamiento.
+
+\item \textbf{Trabajo y protección:}
+ocupación, formalidad aproximada, cotización,
+salud y prestaciones.
+
+\item \textbf{Capital humano y composición:}
+educación, edades, menores y adultos mayores.
+
+\item \textbf{Otros recursos:}
+presencia de pensiones, rentas y transferencias.
+
+\item \textbf{Territorio:}
+ciudad, zona y departamento.
+
+\end{itemize}
+\end{column}
+
+\begin{column}{0.49\textwidth}
+\textbf{Formas de representar esa información}
+
+\begin{itemize}
+\setlength{\itemsep}{0.4em}
+
+\item \textbf{Composición:}
+cuántos miembros trabajan o cotizan
+y qué proporción del hogar representan.
+
+\item \textbf{Distribución interna:}
+promedios, máximos, mínimos, dispersión y sumas.
+Por ejemplo, educación máxima de los ocupados.
+
+\item \textbf{Recursos frente a necesidades:}
+personas por cuarto, miembros por ocupado formal
+y arriendo ajustado por tamaño del hogar.
+
+\item \textbf{Perfiles individuales:}
+características del jefe, cónyuge
+y tres miembros de mayor edad.
+
+\end{itemize}
+\end{column}
+
+\end{columns}
+
+\medskip
+\footnotesize
+
+Los agregados distinguen cuatro grupos:
+\textbf{hogar completo, unidad de gasto, adultos y ocupados}.
+
+\smallskip
+Una misma respuesta genera varias medidas:
+por ejemplo, la educación del jefe, la educación media
+del hogar y la educación máxima de sus ocupados.
+
+\end{frame}
+
+
+% 08. Configuración documentada y validación.
+\begin{frame}{Elección del modelo e hiperparámetros}
+\small
+\begin{tabular}{@{}L{0.36\textwidth}L{0.57\textwidth}@{}}
+\toprule
+\textbf{Desafío} & \textbf{LightGBM}\\
+\midrule
+Modelo & Tras probar varios modelos tuneados, este obtuvo el mayor F1\\[0.5em]
+Umbral & Búsqueda exhaustiva del umbral\\
+Hiperparámetros  & Se probaron distintas configuraciones y se hizo busqueda cerca a las mejores.\\
+Estrategia de validación & 4-fold validation para entrenamiento (con Bogotá) + hold-out sin Bogotá \\
+\bottomrule
+\end{tabular}
+\medskip
+
+
+\cierre{La buena elección de predictores y el umbral fueron determinantes.}
+\fuente{Configuración y resultados del script 11. Se documenta búsqueda de 100 umbrales; no se conserva una bitácora de búsqueda de hiperparámetros de LightGBM.}
+\note{La configuración se mantiene fija entre X5, X6 y X7. El umbral se optimiza sobre las mismas predicciones OOF usadas para reportar F1: no es validación anidada. Se entrena con log-loss. XGBoost también representa no linealidades e interacciones; la comparación empírica distingue los dos. La regularización controla el riesgo de sobreajuste, sin garantizar eliminarlo ni resolver las diferencias territoriales. F1 tampoco incorpora por sí solo costos sociales asimétricos.}
+\end{frame}
+
+
+% 09. Cuatro formas funcionales.
+\begin{frame}{¿Por esta configuración con LGBM fue la de mejor desempeño?}
+\centering
+\includegraphics[width=0.98\textwidth]{best_datos_curvas.pdf}
+\smallskip
+
+{\small La capacidad de LGBM de ajustar formas funcionales complicada es clave en este problema}
+\fuente{Cuatro primeros del ranking. Tasas por grupos de cuantiles, IC de Wilson del 95\%, casos válidos y rango P1--P99. UG: unidad de gasto; LP: línea de pobreza.}
+\note{Solo tasas observadas e intervalos. No se ajusta ni dibuja logit. Arriendo relativo y estimado se asocian negativamente con pobreza; miembros por formal, positivamente; la proporción cuya actividad principal es trabajar no es estrictamente monótona. Son asociaciones descriptivas, no PDP ni efectos causales. No prueban superioridad frente a un logit con transformaciones o a otro algoritmo de árboles. El cociente por formal excluye denominadores no válidos.}
+\end{frame}
+
+% 10. Ranking del ganador, con Bogotá en el entrenamiento.
+\begin{frame}{¿Por esta configuración con LGBM fue la de mejor desempeño?}
+\begin{columns}[c,onlytextwidth]
+\begin{column}{0.60\textwidth}
+\includegraphics[width=\linewidth]{best_balance_bogota.pdf}
+\end{column}
+\begin{column}{0.36\textwidth}
+\small
+\begin{itemize}
+\setlength{\itemsep}{0.8em}
+\item Se conservaron los \textbf{\NBogota{} hogares} de Bogotá.
+\item La mayoría de variables clave tiene brechas pequeñas (VI se ahondará más adelante).
+\item Bogotá no fue un problema. El mejor modelo mantuvo a Bogotá en su entrenamiento.
+\end{itemize}
+\end{column}
+\end{columns}
+\fuente{15 principales del LightGBM; SMD train -- test e IC del 95\%. Categóricas: indicador modal. El SMD de departamento sin Bogotá no se define por varianza nula.}
+\note{Esta figura cambia la selección de la anterior: usa importancia por permutación. El ganador entrenó con Bogotá; este diagnóstico no implica reentrenamiento ni evaluación sin ella. Dominio es indicador de RESTO URBANO; tenencia, de arriendo. Departamento usa el indicador modal del artifact: SMD con Bogotá aproximadamente 0,370 y sin Bogotá indefinido, no cero. Conservar Bogotá requiere evaluar desempeño territorial; el balance solo no basta.}
+\end{frame}
+
+% 11 Caracterizacion del problema
+
+\begin{frame}{¿Por esta configuración con LGBM fue la de mejor desempeño?}
+\small
+
+\begin{itemize}
+\setlength{\itemsep}{1em}
+
+\item LGBM ajusta muy bien a formas complejas.
+
+\item La búsqueda del umbral óptimo permitió abordar el desbalance.
+
+\item Bogotá no añadía diferencias sustanciales, lo que peritió aprovecharlo.
+
+\end{itemize}
+
+\end{frame}
+
+
+%%%%5 Importancia de variables y relación con política pública
+
+\begin{frame}[plain]
+\vfill
+\begin{center}
+{\usebeamercolor[fg]{structure}\fontsize{48}{52}\selectfont\bfseries --}\par
+\vspace{0.5cm}
+{\usebeamercolor[fg]{structure}\rule{0.65\textwidth}{1.5pt}}\par
+\vspace{0.5cm}
+{\LARGE\bfseries Variable importance e interpretabilidad}\par
+\vspace{0.35cm}
+{\normalsize\color{black!65}Importancia por permutación, matriz de confusión y relación con public policy}\par
+\end{center}
+\vfill
+\end{frame}
+
+
+
+% 12. Dimensionalidad e interpretación.
+\begin{frame}{El reto de la interpretabilidad}
+\small
+Un LGBM con 1296 predictores es poco o nada interpretable por si sólo.
+\medskip
+Se puede abordar este problema
+\begin{itemize}
+\setlength{\itemsep}{0.6em}
+\item Importancia por permutación.
+\item Relacion con public policy y análisis socioeconómico.
+\end{itemize}
+\cierre{Podemos interpretar la predicción sin atribuirle efectos causales.}
+\fuente{Construcción de X7 y análisis descriptivo del proyecto. Una variable derivada no equivale a una pregunta de encuesta.}
+\note{X7 combina características del hogar, agregados por grupos de miembros, proporciones por categoría y medidas de personas concretas. La correlación puede repartir la importancia. Las curvas describen asociaciones marginales: no son efectos causales ni efectos parciales del modelo.}
+\end{frame}
+
+% 13. Ranking a la izquierda, mecanismos a la derecha.
+\begin{frame}{Variables con más poder predictivo}
+\begin{columns}[c,onlytextwidth]
+\begin{column}{0.57\textwidth}
+\includegraphics[width=\linewidth]{best_importancia_top15.pdf}
+\end{column}
+\begin{column}{0.39\textwidth}
+\small
+\textbf{Componentes clave}
+\begin{itemize}
+\setlength{\itemsep}{0.9em}
+\item \textbf{Arriendo relativo:} arriendo normalizado por costo de vida
+\item \textbf{Tipo de trabajo} formal, tipo de actividad.
+\item \textbf{Composición:} fuentes y tipos de ingresos (rentas, pensiones, subsidios).
+\end{itemize}
+\medskip
+{\footnotesize Mayor caída del F1 tras permutación implica mayor poder predictivo.}
+\end{column}
+\end{columns}
+\fuente{Permutación: promedio de 3 repeticiones, 5 folds y unos 2.000 hogares de validación por fold. Caídas en puntos de F1; no son efectos causales ni contribuciones aditivas.}
+\note{El primer predictor divide el arriendo pagado o estimado entre miembros UG y línea de pobreza. El tercero usa miembros UG por ocupado formal. Arriendo relativo: caída de 6,64 puntos; arriendo estimado: 2,76; miembros por formal: 1,82. Las categorías sin dato pueden reflejar saltos del cuestionario, no ausencia de cotización ni de horas extra. La importancia se estima en submuestras de validación, no es una descomposición del F1 OOF completo.}
+\end{frame}
+
+% 14. Una sola conclusión, centrada.
+\begin{frame}
+\vfill
+\begin{center}
+{\usebeamercolor[fg]{structure}\LARGE
+Arriendo, tipo de ocupación y fuentes de ingresos componen gran parte de la predicción.}
+\end{center}
+\vfill
+\note{Síntesis del ranking de importancia por permutación. No afirma causalidad ni que el resto de predictores sea prescindible sin volver a validar.}
+\end{frame}
+
+
+
+
+%%%%%%%%% 11. Diagnóstico con conteos reconstruidos y verificados.
+
+
+\begin{frame}[plain]
+\vfill
+\begin{center}
+{\usebeamercolor[fg]{structure}\fontsize{48}{52}\selectfont\bfseries --}\par
+\vspace{0.5cm}
+{\usebeamercolor[fg]{structure}\rule{0.65\textwidth}{1.5pt}}\par
+\vspace{0.5cm}
+{\LARGE\bfseries Desempeño de la clasificación }\par
+\vspace{0.35cm}
+{\normalsize\color{black!65}Matriz de confusión y medidas de desempeño}\par
+\end{center}
+\vfill
+\end{frame}
+
+
+
+\begin{frame}{Implicación de política pública}
+\begin{columns}[c,onlytextwidth]
+\begin{column}{0.56\textwidth}
+\small
+\textbf{}
+\medskip
+
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Predicción/Real & Pobre & No pobre\\
+\midrule
+Pobre & \textbf{\TPBest} & \FPBest\\
+No pobre & \FNBest & \textbf{\TNBest}\\
+\bottomrule
+\end{tabular}
+\medskip
+
+{\footnotesize Umbral \UmbralBest; predicciones OOF.}
+\end{column}
+\begin{column}{0.39\textwidth}
+\small
+\begin{tabular}{@{}lr@{}}
+\toprule
+Precisión & \PrecisionBest\\
+Sensibilidad & \RecallBest\\
+\textbf{F1} & \textbf{\FoneCV}\\
+AUC ROC & \AucBest\\
+Accuracy & 0,90\\
+\bottomrule
+\end{tabular}
+\end{column}
+\end{columns}
+\cierre{La mejora predictiva convive con \FNBest{} hogares pobres que quedan fuera.}
+\fuente{Registro de modelos. Conteos enteros reconstruidos de precisión y sensibilidad OOF y del total por clase; reproducen el F1 registrado.}
+\note{TP = 26.236; FN = 6.788; FP = 9.027; TN = 122.909. No provienen de un archivo nuevo de predicciones OOF. El script verifica precisión y F1 con tolerancia 1e-10. El umbral se elige y evalúa con las mismas OOF: posible optimismo de selección. No son métricas separadas del test de Kaggle.}
+\end{frame}
+
+
+\begin{frame}[plain]
+\vfill
+\begin{center}
+{\usebeamercolor[fg]{structure}\fontsize{48}{52}\selectfont\bfseries --}\par
+\vspace{0.5cm}
+{\usebeamercolor[fg]{structure}\rule{0.65\textwidth}{1.5pt}}\par
+\vspace{0.5cm}
+{\LARGE\bfseries Public policy}\par
+\vspace{0.35cm}
+{\normalsize\color{black!65}Matriz de confusión y variable importance para public policy}\par
+\end{center}
+\vfill
+\end{frame}
+
+
+
+%%%%%%%% 12. Consecuencias de los errores y decisión del umbral.
+
+\begin{frame}{Implicaciones de política pública}
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.47\textwidth}
+\begin{block}{Filtración}
+\centering{\LARGE\Leakage}\par
+\smallskip
+{\small de los seleccionados no son pobres}
+\end{block}
+\small
+\FPBest{} falsos positivos: recursos que llegan a hogares no pobres.
+\end{column}
+\begin{column}{0.47\textwidth}
+\begin{block}{Subcobertura}
+\centering{\LARGE\Undercoverage}\par
+\smallskip
+{\small de los pobres quedan fuera}
+\end{block}
+\small
+\FNBest{} falsos negativos: hogares pobres excluidos del beneficio.
+\end{column}
+\end{columns}
+\medskip
+\small
+Bajar el umbral amplía cobertura y puede aumentar la filtración; subirlo restringe el acceso.
+\fuente{Diagnóstico OOF: filtración = FP/(TP+FP); subcobertura = FN/(TP+FN). Los denominadores representan poblaciones distintas.}
+\note{Filtración es 1 menos precisión; subcobertura, 1 menos sensibilidad. Filtración no es la tasa de falsos positivos entre no pobres (6,84 por ciento). Bajar el umbral reduce o mantiene FN y aumenta o mantiene FP; la proporción de filtración no tiene monotonicidad garantizada en la muestra. Maximizar F1 no incorpora presupuesto, severidad de pobreza ni costos sociales asimétricos.}
+\end{frame}
+
+% 15. Viabilidad y cierre.
+\begin{frame}{Condiciones para una política real}
+\small
+\begin{tabular}{@{}L{0.33\textwidth}L{0.59\textwidth}@{}}
+\toprule
+\textbf{Pregunta} & \textbf{Condición antes de desplegar}\\
+\midrule
+\textbf{FALTA LA RELACIÓN CON PUBLIC POLICY}\\
+\bottomrule
+\end{tabular}
+\cierre{Es un candidato para apoyar la focalización, sujeto a validación operativa y territorial.}
+\fuente{Diseño de X7 y diagnósticos del proyecto. El desempeño de una encuesta reducida aún no se ha validado.}
+\note{1.296 predictores no son 1.296 preguntas: hay muchos agregados de las mismas respuestas. Trabajo y formalidad requieren información de los miembros. P6100 y P7510s3 incluyen régimen subsidiado y ayudas institucionales: no se afirma filtración directa del objetivo, pero usar asignaciones vigentes puede reproducir reglas previas o introducir información no disponible al desplegar. Se excluye el ingreso objetivo directo. Antes del despliegue: versión reducida validada, disponibilidad temporal, validación geográfica y temporal, calibración si se usan probabilidades como riesgo, y costos y presupuesto explícitos.}
+\end{frame}
+
+\end{document}
