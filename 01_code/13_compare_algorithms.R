@@ -521,12 +521,15 @@ puntos_leakage <- map_dfr(names(colores_top3), function(.m) {
 }) |>
   mutate(modelo = factor(modelo, levels = names(colores_top3)))
 
-# Diferencia de leakage frente a Elastic Net con el 80% de los pobres
-# encontrados, para el texto de las slides.
-leakage_80 <- curvas_leakage |>
-  group_by(modelo) |>
-  slice_min(abs(recall - 0.8), n = 1, with_ties = FALSE) |>
-  ungroup()
+# Hogares no pobres incluidos cuando cada modelo encuentra exactamente el
+# 80% de los pobres, para el texto de las slides. Se calcula con todos los
+# hogares, no con la curva resumida de la figura.
+leakage_80 <- map_dfr(names(colores_top3), function(.m) {
+  orden <- order(prob_top3[[.m]], decreasing = TRUE)
+  tp <- cumsum(pobre[orden])
+  fp <- cumsum(!pobre[orden])
+  tibble(modelo = .m, falsos_positivos = fp[which(tp >= 0.8 * n_pobres)[1]])
+})
 print(leakage_80)
 
 grafico_leakage <- curvas_leakage |>
