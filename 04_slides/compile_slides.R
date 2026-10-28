@@ -4,8 +4,8 @@
 # Objetivo: Compilar los dos decks de la presentación a PDF a partir de
 # las figuras y tablas que generan los scripts de 01_code/.
 #
-# Insumos:  04_slides/compare_equipo_03.tex (lee 02_outputs/figures/ y
-#           02_outputs/tables/) y 04_slides/best_equipo_03.tex.
+# Insumos:  04_slides/compare_equipo_03.tex y 04_slides/best_equipo_03.tex,
+#           que leen 02_outputs/figures/ y 02_outputs/tables/.
 # Salidas:  04_slides/compare_equipo_03.pdf y 04_slides/best_equipo_03.pdf.
 ##########################################################
 #
@@ -14,15 +14,15 @@
 # las diapositivas son el único paso del proyecto que depende de LaTeX, y su
 # ausencia no debe impedir reproducir los datos, los modelos y los resultados.
 #
-# Cada deck se compila con su propio motor: compare usa XeLaTeX, porque su
-# plantilla carga la fuente Carlito con fontspec; best usa pdfLaTeX. Con
-# TinyTeX, tinytex::latexmk() instala solo los paquetes de LaTeX que falten.
+# Los dos decks usan la misma plantilla y se compilan con XeLaTeX, porque
+# cargan la fuente Carlito con fontspec. Con TinyTeX, tinytex::latexmk()
+# instala solo los paquetes de LaTeX que falten.
 ##########################################################
 
-decks <- c(compare_equipo_03 = "xelatex", best_equipo_03 = "pdflatex")
+decks <- c(compare_equipo_03 = "xelatex", best_equipo_03 = "xelatex")
 
 if (!requireNamespace("tinytex", quietly = TRUE) ||
-    Sys.which("xelatex") == "" || Sys.which("pdflatex") == "") {
+    Sys.which("xelatex") == "") {
   message("No se compilan las diapositivas: no se encontró LaTeX. ",
           "Instálelo con tinytex::install_tinytex() para compilarlas.")
 } else {
