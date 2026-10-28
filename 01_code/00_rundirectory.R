@@ -46,6 +46,9 @@ source("01_code/03_build_features.R")
 # Etapa 1: desbalance de clases y relación con los predictores.
 source("01_code/04_descriptive_analysis.R")
 
+# Informe exploratorio de la base (02_outputs/figures/analisis_exploratorio.pdf).
+source("01_code/17_eda_reporte.R")
+
 # Particiones de validación cruzada compartidas por todos los modelos.
 source("01_code/05_create_cv_folds.R")
 
@@ -62,6 +65,10 @@ source("01_code/11_model_boosting.R")
 source("01_code/11_model_adaboost.R")            
 source("01_code/11_model_lightgbm.R")
 source("01_code/12_model_naive_bayes.R")
+
+# Rebalanceo de clases: Random Forest, AdaBoost y Naive Bayes con cada hogar
+# pobre repetido 4 veces en el entrenamiento (mismos hiperparámetros).
+source("01_code/16_rebalance_x4.R")
 
 # Bloque C: análisis para las presentaciones ------------------------------
 
