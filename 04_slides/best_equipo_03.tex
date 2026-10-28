@@ -483,58 +483,77 @@ Accuracy & 0,90\\
 \vspace{0.5cm}
 {\usebeamercolor[fg]{structure}\rule{0.65\textwidth}{1.5pt}}\par
 \vspace{0.5cm}
-{\LARGE\bfseries Public policy}\par
+{\LARGE\bfseries Política pública}\par
 \vspace{0.35cm}
-{\normalsize\color{black!65}Matriz de confusión y variable importance para public policy}\par
+{\normalsize\color{black!65}Qué revela el F1 y si cabe en una encuesta corta}\par
 \end{center}
 \vfill
 \end{frame}
 
 
 
-%%%%%%%% 12. Consecuencias de los errores y decisión del umbral.
+%%%%%%%% 12. El F1 y la focalización.
 
-\begin{frame}{Implicaciones de política pública}
-\begin{columns}[T,onlytextwidth]
-\begin{column}{0.47\textwidth}
-\begin{block}{Filtración}
-\centering{\LARGE\Leakage}\par
-\smallskip
-{\small de los seleccionados no son pobres}
+\begin{frame}{El F1 trata igual los dos errores}
+\small Es la media armónica de precisión y recall: pesa lo mismo un cupo mal asignado y un pobre excluido.
+\vspace{0.7em}
+\begin{columns}[c,onlytextwidth]
+\begin{column}{0.48\textwidth}
+\begin{block}{Fuga}
+\centering
+{\LARGE\Leakage}\\[0.15em]
+{\small de la lista no es pobre}\\[0.35em]
+{\footnotesize uno menos la precisión}\\[0.15em]
+{\footnotesize\FPBest{} hogares}
 \end{block}
-\small
-\FPBest{} falsos positivos: recursos que llegan a hogares no pobres.
 \end{column}
-\begin{column}{0.47\textwidth}
+\begin{column}{0.48\textwidth}
 \begin{block}{Subcobertura}
-\centering{\LARGE\Undercoverage}\par
-\smallskip
-{\small de los pobres quedan fuera}
+\centering
+{\LARGE\Undercoverage}\\[0.15em]
+{\small de los pobres queda fuera}\\[0.35em]
+{\footnotesize uno menos el recall}\\[0.15em]
+{\footnotesize\FNBest{} hogares}
 \end{block}
-\small
-\FNBest{} falsos negativos: hogares pobres excluidos del beneficio.
 \end{column}
 \end{columns}
-\medskip
-\small
-Bajar el umbral amplía cobertura y puede aumentar la filtración; subirlo restringe el acceso.
-\fuente{Diagnóstico OOF: filtración = FP/(TP+FP); subcobertura = FN/(TP+FN). Los denominadores representan poblaciones distintas.}
-\note{Filtración es 1 menos precisión; subcobertura, 1 menos sensibilidad. Filtración no es la tasa de falsos positivos entre no pobres (6,84 por ciento). Bajar el umbral reduce o mantiene FN y aumenta o mantiene FP; la proporción de filtración no tiene monotonicidad garantizada en la muestra. Maximizar F1 no incorpora presupuesto, severidad de pobreza ni costos sociales asimétricos.}
+\vspace{0.55em}
+\cierre{En \UmbralBest{} se cubre al \RecallBest. Si excluir duele más, el corte baja; si el presupuesto aprieta, sube.}
+\note{Umbral 0,394 elegido para maximizar el F1 fuera de muestra. Precisión 74,4\% y recall 79,4\%. Lista de 35.263 hogares. De los no pobres, el 6,8\% entraría: esa tasa no es la filtración de la lista. Al bajar el corte entran más de los 6.788 excluidos y también más no pobres; al subirlo la lista se acorta y quedan fuera más pobres. La proporción de no pobres dentro de la lista no tiene dirección garantizada. No hay conteos de otros cortes: las probabilidades OOF no se guardaron. Mover el corte no reentrena el modelo.}
 \end{frame}
 
-% 15. Viabilidad y cierre.
-\begin{frame}{Condiciones para una política real}
+%%%%%%%% 13. Encuesta corta.
+
+\begin{frame}{¿Cabe en una encuesta corta?}
+\small Lo que mueve el F1 cabe en una visita. No hacen falta 1.296 preguntas.
+\vspace{0.7em}
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}
+\begin{block}{Se puede preguntar}
 \small
-\begin{tabular}{@{}L{0.33\textwidth}L{0.59\textwidth}@{}}
-\toprule
-\textbf{Pregunta} & \textbf{Condición antes de desplegar}\\
-\midrule
-\textbf{FALTA LA RELACIÓN CON PUBLIC POLICY}\\
-\bottomrule
-\end{tabular}
-\cierre{Es un candidato para apoyar la focalización, sujeto a validación operativa y territorial.}
-\fuente{Diseño de X7 y diagnósticos del proyecto. El desempeño de una encuesta reducida aún no se ha validado.}
-\note{1.296 predictores no son 1.296 preguntas: hay muchos agregados de las mismas respuestas. Trabajo y formalidad requieren información de los miembros. P6100 y P7510s3 incluyen régimen subsidiado y ayudas institucionales: no se afirma filtración directa del objetivo, pero usar asignaciones vigentes puede reproducir reglas previas o introducir información no disponible al desplegar. Se excluye el ingreso objetivo directo. Antes del despliegue: versión reducida validada, disponibilidad temporal, validación geográfica y temporal, calibración si se usan probabilidades como riesgo, y costos y presupuesto explícitos.}
+\begin{itemize}
+\setlength{\itemsep}{0.55em}
+\item Arriendo, oficio y cotización.
+\item Quién vive y quién trabaja.
+\item Sin preguntar el ingreso.
+\end{itemize}
+\end{block}
+\end{column}
+\begin{column}{0.48\textwidth}
+\begin{block}{Cuesta operarlo}
+\small
+\begin{itemize}
+\setlength{\itemsep}{0.55em}
+\item Arriendo relativo o imputado.
+\item Pensiones y subsidios,\\ cerca del ingreso.
+\item Esas ayudas no abren el cupo.
+\end{itemize}
+\end{block}
+\end{column}
+\end{columns}
+\vspace{0.45em}
+\cierre{La visita corta es plausible. Todavía no tiene un F1: el ranking no prueba que el resto se pueda quitar.}
+\note{Importancia por permutación: arriendo relativo, caída de 6,64 puntos de F1; arriendo estimado, 2,76; miembros por ocupado formal, 1,82. Las ayudas y transferencias acompañan la pobreza y el hogar puede declararlas: no deben ser la regla de entrada. Bogotá no está en el test, así que el mismo corte allí es otra evaluación. La encuesta corta no se volvió a validar.}
 \end{frame}
 
 \end{document}
